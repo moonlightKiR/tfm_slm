@@ -4,7 +4,7 @@
 \whiledo{\value{i} < 100}{ % Busca hasta el archivo 99.tex
     \IfFileExists{content/\the\value{i}.tex}{
         \input{content/\the\value{i}}
-        \newpage
+        \clearpage
         \stepcounter{i}
     }{
         \setcounter{i}{101} % Se detiene si falta un número en la secuencia
