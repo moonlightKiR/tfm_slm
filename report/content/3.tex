@@ -1,1 +1,13 @@
-\section{body}
+\section{Diseño e Implementación de la Arquitectura Híbrida}
+\label{sec:arquitectura}
+
+Este capítulo detalla la aportación técnica central de este TFM: la integración de Transformers y GRU en un único modelo funcional.
+
+\subsection{Arquitectura del Modelo}
+Descripción de la sinergia entre las capas de atención y las capas recurrentes. Se detalla cómo la GRU refina la salida de los bloques de atención para mejorar la eficiencia secuencial.
+
+\subsection{Optimización con CUDA}
+Desarrollo de kernels personalizados para maximizar el uso de la GPU. Se aborda el reto de paralelizar la parte de atención mientras se mantiene la eficiencia en la naturaleza secuencial de la GRU.
+
+\subsection{Tokenización y Procesamiento de Datos}
+Preparación de los datasets y estrategia de tokenización adaptada a la arquitectura híbrida.
