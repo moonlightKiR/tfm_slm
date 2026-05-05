@@ -25,6 +25,11 @@ El flujo de trabajo definido realiza las siguientes acciones:
 
 Esta automatización permite que el registro de contenedores de GitHub (\texttt{ghcr.io}) actúe como la única fuente de verdad para las imágenes que posteriormente serán orquestadas.
 
+\subsection{Gestión de Binarios y Control de Versiones}
+Dada la naturaleza del proyecto, que incluye tanto código fuente como el documento de la tesis en formato PDF, se ha implementado una política de gestión de archivos binarios mediante el uso de \texttt{.gitattributes}. 
+
+Se ha configurado específicamente el archivo \texttt{report/main.pdf} como binario puro. Esta medida evita que el sistema de control de versiones intente realizar fusiones de contenido (\textit{merges}) sobre el PDF, lo que generaría conflictos irresolubles. En su lugar, se fuerza una política de sobreescritura, garantizando que la versión final del reporte sea siempre consistente y evitando la corrupción de datos en el historial de Git.
+
 \subsection{Orquestación con Kubernetes}
 Configuración del clúster de K8s para servir el modelo híbrido de forma escalable.
 
