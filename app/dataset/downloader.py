@@ -1,49 +1,59 @@
 import logging
-import os
+from pathlib import Path
 
+from app.config import settings
 from datasets import load_dataset
+from pydantic import BaseModel
+
+from .constants import DATASETS_CONFIG
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
-DATASETS_CONFIG = {
-    "open_assistant": {"path": "OpenAssistant/oasst1", "name": None},
-    "sharegpt": {"path": "anon8231489123/ShareGPT_Vicuna_unfiltered", "name": None},
-    "alpaca": {"path": "tatsu-lab/alpaca", "name": None},
-    "ultrachat": {"path": "stingning/ultrachat", "name": None},
-    "the_stack_yaml": {
-        "path": "bigcode/the-stack",
-        "name": None,
-        "data_dir": "data/yaml",  # Example filter for YAML in The Stack
-    },
-}
 
-
-def download_datasets(output_dir: str = ".datasets"):
+class DatasetConfig(BaseModel):
     """
-    Downloads the predefined datasets from Hugging Face and saves them locally.
+    Schema for individual dataset configuration.
     """
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-        logger.info(f"Created directory: {output_dir}")
 
-    for key, config in DATASETS_CONFIG.items():
-        logger.info(f"Starting download for: {key} ({config['path']})")
-        try:
-            # We use load_dataset which handles caching and local storage
-            # By default it saves to ~/.cache/huggingface/datasets
-            # But we can specify a cache_dir to move it to .datasets
-            load_dataset(
-                config["path"],
-                name=config.get("name"),
-                cache_dir=output_dir,
-                data_dir=config.get("data_dir"),
-                trust_remote_code=True,
-            )
-            logger.info(f"Successfully downloaded {key}")
-        except Exception as e:
-            logger.error(f"Failed to download {key}: {e}")
+    path: str
+    name: str | None = None
+    data_dir: str | None = None
+
+
+def download_datasets(output_dir: str = settings.datasets_dir) -> None:
+    """
+    Downloads predefined datasets from Hugging Face and saves them locally.
+    """
+    _ensure_directory_exists(Path(output_dir))
+
+    for dataset_key, raw_config in DATASETS_CONFIG.items():
+        # Validate raw constant with Pydantic model
+        config = DatasetConfig(**raw_config)
+        _download_single_dataset(dataset_key, config, output_dir)
+
+
+def _ensure_directory_exists(directory_path: Path) -> None:
+    if not directory_path.exists():
+        directory_path.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Created directory: {directory_path}")
+
+
+def _download_single_dataset(key: str, config: DatasetConfig, output_dir: str) -> None:
+    logger.info(f"Starting download for: {key} ({config.path})")
+
+    try:
+        load_dataset(
+            config.path,
+            name=config.name,
+            cache_dir=output_dir,
+            data_dir=config.data_dir,
+            trust_remote_code=settings.trust_remote_code,
+        )
+        logger.info(f"Successfully downloaded {key}")
+    except Exception as error:
+        logger.error(f"Failed to download {key}: {error}")
 
 
 if __name__ == "__main__":

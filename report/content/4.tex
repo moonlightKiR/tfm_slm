@@ -7,12 +7,13 @@ Este capítulo detalla la aportación técnica central de este TFM: la integraci
 La calidad del entrenamiento de un Small Language Model (SLM) depende críticamente de la diversidad y representatividad de los datos. Se ha diseñado una estrategia de \textit{Data Mixing} para la fase de pre-entrenamiento y alineación general, reservando el conocimiento específico para una fase final.
 
 \subsubsection{Selección de Datasets de Propósito General}
-Se han seleccionado cuatro pilares de datos abiertos para dotar al modelo de capacidades generales:
+Se han seleccionado cinco pilares de datos abiertos para dotar al modelo de capacidades lingüísticas, de razonamiento y técnicas:
 \begin{itemize}
-    \item \textbf{OpenAssistant (OASST1):} Fuente principal de naturalidad, proporcionando turnos de diálogo con matices humanos reales.
-    \item \textbf{ShareGPT:} Utilizado para transferir el estilo resolutivo y la estructura de respuesta de modelos avanzados.
-    \item \textbf{Alpaca:} Aporta una base sólida de \textit{instruction-tuning} para tareas directas.
-    \item \textbf{UltraChat:} Fundamental para garantizar la consistencia en diálogos largos, poniendo a prueba la memoria de la arquitectura híbrida.
+    \item \textbf{OpenAssistant (OASST1):}\footnote{\url{https://huggingface.co/datasets/OpenAssistant/oasst1}} Fuente principal de naturalidad, proporcionando turnos de diálogo con matices humanos reales.
+    \item \textbf{ShareGPT:}\footnote{\url{https://huggingface.co/datasets/anon8231489123/ShareGPT_Vicuna_unfiltered}} Utilizado para transferir el estilo resolutivo y la estructura de respuesta de modelos avanzados.
+    \item \textbf{Alpaca:}\footnote{\url{https://huggingface.co/datasets/tatsu-lab/alpaca}} Aporta una base sólida de \textit{instruction-tuning} para tareas directas.
+    \item \textbf{UltraChat:}\footnote{\url{https://huggingface.co/datasets/stingning/ultrachat}} Fundamental para garantizar la consistencia en diálogos largos, poniendo a prueba la memoria de la arquitectura híbrida.
+    \item \textbf{The Stack (YAML):}\footnote{\url{https://huggingface.co/datasets/bigcode/the-stack}} Subconjunto del dataset \textit{The Stack} filtrado para archivos de configuración YAML, esencial para el conocimiento de infraestructura y sintaxis DevOps.
 \end{itemize}
 
 \subsubsection{Inyección de Conocimiento de Dominio (Fase Final)}
