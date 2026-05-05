@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "slm for tfm (transformers and gru)"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "datasets>=4.8.5",
+    "huggingface-hub>=1.13.0",
+]
 
 [tool.ruff]
 src = ["app"]
