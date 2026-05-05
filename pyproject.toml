@@ -28,3 +28,9 @@ line-ending = "auto"
 
 [tool.ty.rules]
 invalid-argument-type = "ignore"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
+]
