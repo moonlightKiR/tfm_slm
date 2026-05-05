@@ -3,6 +3,19 @@
 
 El ciclo de vida del modelo culmina con su despliegue en un entorno de producción real.
 
+\subsection{Automatización de la Integración Continua (CI)}
+Para automatizar el ciclo de vida de la imagen de Docker, se ha implementado un flujo de trabajo mediante GitHub Actions. Este proceso de integración continua garantiza que cada cambio en el código fuente sea validado y empaquetado automáticamente.
+
+El flujo de trabajo definido realiza las siguientes acciones:
+\begin{itemize}
+    \item \textbf{Disparadores:} Se activa ante cualquier \textit{push} o \textit{pull request} hacia la rama principal (\texttt{main}).
+    \item \textbf{Seguridad y Autenticación:} Utiliza el token intrínseco de GitHub (\texttt{GITHUB\_TOKEN}) para autenticarse de forma segura en el registro de contenedores sin necesidad de gestionar credenciales externas.
+    \item \textbf{Gestión de Metadatos:} Emplea la acción \texttt{docker/metadata-action} para etiquetar las imágenes de forma inteligente, utilizando el hash del commit (\texttt{SHA}) y etiquetas de rama, lo que facilita la trazabilidad en el despliegue.
+    \item \textbf{Optimización de Build:} Utiliza un sistema de caché persistente en GitHub Actions para reducir los tiempos de construcción, reutilizando capas de la imagen que no hayan sufrido cambios.
+\end{itemize}
+
+Esta automatización permite que el registro de contenedores de GitHub (\texttt{ghcr.io}) actúe como la única fuente de verdad para las imágenes que posteriormente serán orquestadas.
+
 \subsection{Orquestación con Kubernetes}
 Configuración del clúster de K8s para servir el modelo híbrido de forma escalable.
 
