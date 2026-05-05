@@ -1,34 +1,12 @@
 \section{MLOps: Despliegue y Puesta en Producción}
 \label{sec:mlops}
 
-El ciclo de vida del modelo culmina con su despliegue en un entorno de producción real. Para garantizar la portabilidad y consistencia entre entornos, se ha adoptado una estrategia de contenedorización avanzada.
+El ciclo de vida del modelo culmina con su despliegue en un entorno de producción real.
 
-\subsection{Contenedorización con Docker}
-La empaquetación del modelo y su entorno de ejecución se realiza mediante Docker, utilizando un enfoque de construcción multi-etapa (\textit{multi-stage build}) para optimizar el tamaño de la imagen final y mejorar la seguridad.
+\subsection{Pruebas Automatizadas y Calidad de Código}
+La fiabilidad del pipeline de datos y de la arquitectura del modelo se garantiza mediante una suite de pruebas unitarias implementada con el framework \texttt{pytest}. 
 
-Se utiliza \texttt{uv} como gestor de paquetes de Python, lo que permite una resolución de dependencias y una instalación extremadamente rápidas en comparación con \texttt{pip}. El proceso se divide en dos fases:
-\begin{itemize}
-    \item \textbf{Etapa de Construcción (\textit{builder}):} Basada en una imagen ligera de \texttt{uv}, se encarga de sincronizar las dependencias y compilar el \textit{bytecode} de Python, generando un entorno virtual aislado.
-    \item \textbf{Etapa de Ejecución (\textit{runtime}):} Utiliza una imagen mínima de Python 3.13-slim donde solo se copia el entorno virtual pre-construido y el código fuente del modelo, minimizando la superficie de ataque y el peso de la imagen. La ejecución se realiza mediante el punto de entrada \texttt{tfm-slm} gestionado por \texttt{uv}.
-\end{itemize}
-
-\subsection{Automatización de la Integración Continua (CI)}
-Para automatizar el ciclo de vida de la imagen de Docker, se ha implementado un flujo de trabajo mediante GitHub Actions. Este proceso de integración continua garantiza que cada cambio en el código fuente sea validado y empaquetado automáticamente.
-
-El flujo de trabajo definido realiza las siguientes acciones:
-\begin{itemize}
-    \item \textbf{Disparadores:} Se activa ante cualquier \textit{push} o \textit{pull request} hacia la rama principal (\texttt{main}).
-    \item \textbf{Seguridad y Autenticación:} Utiliza el token intrínseco de GitHub (\texttt{GITHUB\_TOKEN}) para autenticarse de forma segura en el registro de contenedores sin necesidad de gestionar credenciales externas.
-    \item \textbf{Gestión de Metadatos:} Emplea la acción \texttt{docker/metadata-action} para etiquetar las imágenes de forma inteligente, utilizando el hash del commit (\texttt{SHA}) y etiquetas de rama, lo que facilita la trazabilidad en el despliegue.
-    \item \textbf{Optimización de Build:} Utiliza un sistema de caché persistente en GitHub Actions para reducir los tiempos de construcción, reutilizando capas de la imagen que no hayan sufrido cambios.
-\end{itemize}
-
-Esta automatización permite que el registro de contenedores de GitHub (\texttt{ghcr.io}) actúe como la única fuente de verdad para las imágenes que posteriormente serán orquestadas.
-
-\subsection{Gestión de Binarios y Control de Versiones}
-Dada la naturaleza del proyecto, que incluye tanto código fuente como el documento de la tesis en formato PDF, se ha implementado una política de gestión de archivos binarios mediante el uso de \texttt{.gitattributes}. 
-
-Se ha configurado específicamente el archivo \texttt{report/main.pdf} como binario puro. Esta medida evita que el sistema de control de versiones intente realizar fusiones de contenido (\textit{merges}) sobre el PDF, lo que generaría conflictos irresolubles. En su lugar, se fuerza una política de sobreescritura, garantizando que la versión final del reporte sea siempre consistente y evitando la corrupción de datos en el historial de Git.
+Para evitar la dependencia de servicios externos y minimizar los tiempos de ejecución, se utiliza la técnica de \textit{mocking} (objetos simulados). Esto permite validar la lógica de adquisición de datos, la integridad de los modelos de datos definidos con Pydantic y el flujo principal de la aplicación sin necesidad de realizar conexiones de red o descargas reales. Además, estas pruebas se han integrado en el flujo de desarrollo mediante \textit{hooks} de \textit{pre-commit}, garantizando que ningún cambio de código sea registrado si no supera satisfactoriamente todos los tests, manteniendo una cobertura de código superior al 95\%.
 
 \subsection{Orquestación con Kubernetes}
 Configuración del clúster de K8s para servir el modelo híbrido de forma escalable.

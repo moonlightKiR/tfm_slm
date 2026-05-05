@@ -1,37 +1,41 @@
 \section{Diseño e Implementación de la Arquitectura Híbrida}
 \label{sec:arquitectura}
 
-Este capítulo detalla la aportación técnica central de este TFM: la integración de Transformers y GRU en un único modelo funcional, así como la estrategia de datos que permite su entrenamiento eficiente.
+Este capítulo detalla la aportación técnica central de este TFM: la integración de Transformers y GRU en un único modelo funcional, así como la estrategia de datos y fine-tuning que permite su entrenamiento eficiente y la comparativa con el estado del arte.
 
 \subsection{Estrategia de Curación y Mezcla de Datos (Data Mixing)}
-La calidad del entrenamiento de un Small Language Model (SLM) depende críticamente de la diversidad y representatividad de los datos. Se ha diseñado una estrategia de \textit{Data Mixing} que equilibra la fluidez conversacional, el razonamiento lógico y el conocimiento de dominio específico.
+La calidad del entrenamiento de un Small Language Model (SLM) depende críticamente de la diversidad y representatividad de los datos. Se ha diseñado una estrategia de \textit{Data Mixing} para la fase de pre-entrenamiento y alineación general, reservando el conocimiento específico para una fase final.
 
-\subsubsection{Selección de Datasets}
-Se han seleccionado cuatro pilares de datos abiertos para dotar al modelo de capacidades generales:
+\subsubsection{Selección de Datasets de Propósito General}
+Se han seleccionado cinco pilares de datos abiertos para dotar al modelo de capacidades lingüísticas, de razonamiento y técnicas:
 \begin{itemize}
-    \item \textbf{OpenAssistant (OASST1):} Fuente principal de naturalidad, proporcionando turnos de diálogo con matices humanos reales.
-    \item \textbf{ShareGPT:} Utilizado para transferir el estilo resolutivo y la estructura de respuesta de modelos avanzados.
-    \item \textbf{Alpaca:} Aporta una base sólida de \textit{instruction-tuning} para tareas directas.
-    \item \textbf{UltraChat:} Fundamental para garantizar la consistencia en diálogos largos, poniendo a prueba la memoria de la arquitectura híbrida.
+    \item \textbf{OpenAssistant (OASST1):}\footnote{\url{https://huggingface.co/datasets/OpenAssistant/oasst1}} Fuente principal de naturalidad, proporcionando turnos de diálogo con matices humanos reales.
+    \item \textbf{ShareGPT:}\footnote{\url{https://huggingface.co/datasets/anon8231489123/ShareGPT_Vicuna_unfiltered}} Utilizado para transferir el estilo resolutivo y la estructura de respuesta de modelos avanzados.
+    \item \textbf{Alpaca:}\footnote{\url{https://huggingface.co/datasets/tatsu-lab/alpaca}} Aporta una base sólida de \textit{instruction-tuning} para tareas directas.
+    \item \textbf{UltraChat:}\footnote{\url{https://huggingface.co/datasets/stingning/ultrachat}} Fundamental para garantizar la consistencia en diálogos largos, poniendo a prueba la memoria de la arquitectura híbrida.
+    \item \textbf{The Stack (YAML):}\footnote{\url{https://huggingface.co/datasets/bigcode/the-stack}} Subconjunto del dataset \textit{The Stack} filtrado para archivos de configuración YAML, esencial para el conocimiento de infraestructura y sintaxis DevOps.
 \end{itemize}
 
-\subsubsection{Generación de Datos de Dominio y RAG}
-Dado que el objetivo final es actuar como experto sobre la documentación de Zurich, se ha implementado un pipeline que convierte manuales técnicos en pares de Pregunta-Contexto-Respuesta. Esto entrena al modelo específicamente para la metodología \textbf{RAG}, enseñándole a priorizar la información recuperada externamente.
+\subsubsection{Inyección de Conocimiento de Dominio (Fase Final)}
+Una vez que el modelo ha adquirido capacidades lingüísticas generales, se procede a dotarlo de conocimiento especializado mediante el dataset sintético de Zurich. Esta fase se aborda desde dos metodologías para su posterior comparativa:
+\begin{itemize}
+    \item \textbf{Fine-tuning con LoRA (Low-Rank Adaptation):} Entrenamiento eficiente de una pequeña fracción de los parámetros del modelo para integrar el conocimiento directamente en los pesos de la red.
+    \item \textbf{Retrieval-Augmented Generation (RAG):} Implementación de una arquitectura de consulta externa que proporciona contexto en tiempo real sin modificar los pesos del modelo.
+\end{itemize}
 
-\subsubsection{Distribución del Dataset Final}
-Para optimizar el rendimiento bajo restricciones de recursos, se ha definido la siguiente distribución de pesos:
+\subsubsection{Distribución del Dataset de Pre-entrenamiento}
+Para optimizar el rendimiento bajo restricciones de recursos, se ha definido la siguiente distribución de pesos para la fase inicial:
 
 \begin{table}[H]
 \centering
 \begin{tabularx}{\textwidth}{|X|X|c|X|}
 \hline
 \textbf{Categoría} & \textbf{Dataset} & \textbf{Peso} & \textbf{Propósito} \\ \hline
-Dominio Específico & Sintético (Zurich) & 50\% & Conocimiento del stack técnico \\ \hline
-Fluidez Humana & OpenAssistant & 20\% & Tono conversacional \\ \hline
-Razonamiento & Magicoder / WizardLM & 20\% & Lógica y \textit{debugging} \\ \hline
-Infraestructura & The Stack (YAML) & 10\% & Sintaxis DevOps \\ \hline
+Conversacional & OpenAssistant / UltraChat & 40\% & Tono humano y consistencia en diálogos largos \\ \hline
+Instrucciones & Alpaca / ShareGPT & 40\% & Seguimiento de instrucciones y estructura resolutiva \\ \hline
+Infraestructura & The Stack (YAML) & 20\% & Sintaxis DevOps y automatización \\ \hline
 \end{tabularx}
-\caption{Estrategia de mezcla de datos para el entrenamiento del SLM.}
+\caption{Estrategia de mezcla de datos para el entrenamiento base del SLM.}
 \end{table}
 
 \subsection{Arquitectura del Modelo}
