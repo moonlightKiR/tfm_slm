@@ -12,6 +12,9 @@ dependencies = [
     "pydantic-settings>=2.14.0",
 ]
 
+[project.scripts]
+tfm-slm = "app.main:main"
+
 [tool.ruff]
 src = ["app"]
 line-length = 88
