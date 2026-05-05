@@ -31,4 +31,4 @@ COPY pyproject.toml uv.lock /app/
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Run the application
-CMD ["uv", "run", "app/main.py"]
+CMD ["uv", "run", "tfm-slm"]
