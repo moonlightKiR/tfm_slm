@@ -1,13 +1,20 @@
-\section{Fundamentos Teóricos}
-\label{sec:fundamentos}
+\section{Estado del Arte}
+\label{sec:estado_del_arte}
 
-En este capítulo se analizan las tecnologías base que componen la propuesta híbrida.
+Este capítulo analiza el panorama actual de los modelos de lenguaje, la evolución hacia modelos más eficientes y las investigaciones previas en arquitecturas híbridas.
 
-\subsection{Transformers y el Mecanismo de Atención}
-El impacto del mecanismo de \textit{self-attention} en el procesamiento del lenguaje y su capacidad para capturar relaciones globales.
+\subsection{Evolución de los Modelos de Lenguaje: De LLM a SLM}
+    En los últimos años, el campo del Procesamiento del Lenguaje Natural (NLP) ha estado dominado por los \textit{Large Language Models} (LLM), cuya arquitectura base sigue siendo el Transformer propuesto por Vaswani et al. \cite{vaswani2017attention}. Modelos como Llama 2 \cite{touvron2023llama} han demostrado capacidades emergentes sorprendentes al escalar el número de parámetros a miles de millones. 
 
-\subsection{Gated Recurrent Units (GRU)}
-La eficiencia de las redes recurrentes en el manejo de secuencias y cómo las puertas de actualización permiten mantener una memoria selectiva con menor coste computacional que las LSTM.
+Sin embargo, recientemente ha surgido una tendencia hacia los \textit{Small Language Models} (SLM), impulsada por la necesidad de eficiencia y despliegue en entornos con recursos limitados. Investigaciones como \textit{"Textbooks Are All You Need"} \cite{gunasekar2023textbooks} demuestran que la calidad de los datos puede compensar el tamaño del modelo, permitiendo que arquitecturas de menos de 3 mil millones de parámetros (como Phi-3 o Mistral) compitan en tareas específicas con modelos mucho más grandes. En este contexto, la familia de modelos SmolLM \cite{allal2024smollm} representa el estado actual de la técnica en SLMs ultra-eficientes, optimizando tanto el proceso de entrenamiento como la curación de datos para maximizar el rendimiento en dispositivos de consumo.
 
-\subsection{Retrieval-Augmented Generation (RAG)}
-El concepto de aumentar la capacidad de respuesta del modelo mediante la recuperación de contexto externo, mitigando alucinaciones y proporcionando datos actualizados.
+\subsection{Limitaciones de los Transformers Puros}
+A pesar de su éxito, los Transformers convencionales presentan un cuello de botella fundamental: la complejidad cuadrática del mecanismo de auto-atención respecto a la longitud de la secuencia \cite{vaswani2017attention}. Esto implica un consumo de memoria de video (VRAM) y un tiempo de cómputo que crece de forma prohibitiva para contextos largos. En un entorno de producción, esto se traduce en altos costes operativos y latencias elevadas, lo que motiva la búsqueda de arquitecturas con escalado lineal.
+
+\subsection{Arquitecturas Híbridas y Recurrencia Moderna}
+Para mitigar las limitaciones del Transformer, han resurgido las arquitecturas basadas en recurrencia, pero con enfoques modernos. Las \textit{Gated Recurrent Units} (GRU) \cite{cho2014learning} ofrecen un manejo eficiente de secuencias con un estado oculto de tamaño fijo, eliminando el coste cuadrático. 
+
+Investigaciones recientes como Mamba \cite{gu2023mamba} han propuesto modelos de espacio de estados (\textit{State Space Models}) que logran un rendimiento comparable a los Transformers pero con inferencia de tiempo lineal. La tendencia actual, y el núcleo de este TFM, es la hibridación: combinar capas de atención para capturar relaciones globales con capas recurrentes o lineales para mantener la eficiencia secuencial.
+
+\subsection{Aumento por Recuperación (RAG)}
+Finalmente, el estado del arte no solo se centra en la arquitectura del modelo, sino en su interacción con fuentes externas. El \textit{Retrieval-Augmented Generation} (RAG) \cite{lewis2020rag} se ha consolidado como el estándar para reducir alucinaciones en modelos de lenguaje. Esta técnica permite que el modelo consulte bases de datos externas en tiempo real, proporcionando respuestas basadas en evidencia sin necesidad de reentrenamientos costosos, un componente vital para asistentes técnicos especializados.

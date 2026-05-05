@@ -1,13 +1,13 @@
-\section{Conclusiones y Trabajo Futuro}
-\label{sec:conclusiones}
+\section{MLOps: Despliegue y Puesta en Producción}
+\label{sec:mlops}
 
-Este capítulo resume los hallazgos del proyecto y las posibles líneas de investigación.
+El ciclo de vida del modelo culmina con su despliegue en un entorno de producción real.
 
-\subsection{Viabilidad de los SLM Híbridos}
-Conclusiones sobre si un modelo de estas características es suficiente para casos de uso empresariales específicos.
+\subsection{Orquestación con Kubernetes}
+Configuración del clúster de K8s para servir el modelo híbrido de forma escalable.
 
-\subsection{Lecciones Aprendidas}
-Reflexión sobre los desafíos de ingeniería encontrados durante el desarrollo CUDA y el despliegue MLOps.
+\subsection{GitOps con ArgoCD}
+Implementación del flujo de despliegue continuo, permitiendo que cualquier cambio en la configuración se refleje automáticamente en el clúster.
 
-\subsection{Trabajo Futuro}
-Posibilidades de mejora: cuantización del modelo, soporte para arquitecturas de inferencia como vLLM u Ollama, y fine-tuning con datos de dominio específico.
+\subsection{Integración del Sistema RAG}
+Despliegue de la infraestructura de base de datos vectorial y su conexión con el modelo para la inferencia aumentada.
