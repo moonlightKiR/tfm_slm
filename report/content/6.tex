@@ -3,6 +3,11 @@
 
 El ciclo de vida del modelo culmina con su despliegue en un entorno de producción real.
 
+\subsection{Pruebas Automatizadas y Calidad de Código}
+La fiabilidad del pipeline de datos y de la arquitectura del modelo se garantiza mediante una suite de pruebas unitarias implementada con el framework \texttt{pytest}. 
+
+Para evitar la dependencia de servicios externos y minimizar los tiempos de ejecución, se utiliza la técnica de \textit{mocking} (objetos simulados). Esto permite validar la lógica de adquisición de datos, la integridad de los modelos de datos definidos con Pydantic y el flujo principal de la aplicación sin necesidad de realizar conexiones de red o descargas reales. Además, estas pruebas se han integrado en el flujo de desarrollo mediante \textit{hooks} de \textit{pre-commit}, garantizando que ningún cambio de código sea registrado si no supera satisfactoriamente todos los tests, manteniendo una cobertura de código superior al 95\%.
+
 \subsection{Orquestación con Kubernetes}
 Configuración del clúster de K8s para servir el modelo híbrido de forma escalable.
 
