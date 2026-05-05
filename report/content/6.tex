@@ -1,7 +1,16 @@
 \section{MLOps: Despliegue y Puesta en Producción}
 \label{sec:mlops}
 
-El ciclo de vida del modelo culmina con su despliegue en un entorno de producción real.
+El ciclo de vida del modelo culmina con su despliegue en un entorno de producción real. Para garantizar la portabilidad y consistencia entre entornos, se ha adoptado una estrategia de contenedorización avanzada.
+
+\subsection{Contenedorización con Docker}
+La empaquetación del modelo y su entorno de ejecución se realiza mediante Docker, utilizando un enfoque de construcción multi-etapa (\textit{multi-stage build}) para optimizar el tamaño de la imagen final y mejorar la seguridad.
+
+Se utiliza \texttt{uv} como gestor de paquetes de Python, lo que permite una resolución de dependencias y una instalación extremadamente rápidas en comparación con \texttt{pip}. El proceso se divide en dos fases:
+\begin{itemize}
+    \item \textbf{Etapa de Construcción (\textit{builder}):} Basada en una imagen ligera de \texttt{uv}, se encarga de sincronizar las dependencias y compilar el \textit{bytecode} de Python, generando un entorno virtual aislado.
+    \item \textbf{Etapa de Ejecución (\textit{runtime}):} Utiliza una imagen mínima de Python 3.13-slim donde solo se copia el entorno virtual pre-construido y el código fuente del modelo, minimizando la superficie de ataque y el peso de la imagen. La ejecución se realiza mediante el punto de entrada \texttt{tfm-slm} gestionado por \texttt{uv}.
+\end{itemize}
 
 \subsection{Orquestación con Kubernetes}
 Configuración del clúster de K8s para servir el modelo híbrido de forma escalable.

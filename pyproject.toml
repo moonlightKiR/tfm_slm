@@ -6,6 +6,9 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = []
 
+[project.scripts]
+tfm-slm = "app.main:main"
+
 [tool.ruff]
 src = ["app"]
 line-length = 88
