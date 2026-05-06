@@ -16,6 +16,15 @@ Se han seleccionado cinco pilares de datos abiertos para dotar al modelo de capa
     \item \textbf{The Stack (YAML):}\footnote{\url{https://huggingface.co/datasets/bigcode/the-stack}} Subconjunto del dataset \textit{The Stack} filtrado para archivos de configuración YAML, esencial para el conocimiento de infraestructura y sintaxis DevOps.
 \end{itemize}
 
+\subsubsection{Infraestructura de Datos: Formato Apache Arrow}
+Para garantizar un acceso eficiente a los datasets durante el entrenamiento, se ha optado por el uso de archivos en formato \textbf{Apache Arrow} (\texttt{.arrow}). Este estándar, que subyace a la librería \textit{datasets} de Hugging Face utilizada en el proyecto, ofrece ventajas tecnológicas clave para la viabilidad de los SLMs:
+
+\begin{itemize}
+    \item \textbf{Carga mediante Memory Mapping:} Los archivos \texttt{.arrow} permiten el acceso de tipo ``zero-copy'', mapeando los datos directamente del disco a la memoria RAM. Esto permite entrenar con volúmenes de datos que superan la memoria física disponible, algo crítico en el uso de instancias con recursos limitados.
+    \item \textbf{Almacenamiento Columnar:} A diferencia de formatos tradicionales como JSON o CSV, Arrow organiza la información por columnas. Esto optimiza el procesamiento de secuencias de texto al permitir lecturas parciales y una serialización extremadamente rápida.
+    \item \textbf{Consistencia Estructural:} El uso de este formato garantiza que los campos \textit{instruction}, \textit{input} y \textit{output} mantengan una tipificación estricta, facilitando la integración directa con los modelos de datos de Pydantic definidos en la aplicación.
+\end{itemize}
+
 \subsubsection{Inyección de Conocimiento de Dominio (Fase Final)}
 Una vez que el modelo ha adquirido capacidades lingüísticas generales, se procede a dotarlo de conocimiento especializado mediante el dataset sintético de Zurich. Esta fase se aborda desde dos metodologías para su posterior comparativa:
 \begin{itemize}
