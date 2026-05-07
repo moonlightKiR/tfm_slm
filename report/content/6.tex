@@ -1,7 +1,16 @@
 \section{MLOps: Despliegue y Puesta en Producción}
 \label{sec:mlops}
 
-El ciclo de vida del modelo culmina con su despliegue en un entorno de producción real.
+El ciclo de vida del modelo culmina con su despliegue en un entorno de producción real, sustentado por una arquitectura de software robusta.
+
+\subsection{Arquitectura de Servicios e Idempotencia}
+La pipeline de datos se ha diseñado siguiendo los principios \textbf{SOLID}, transformando scripts procedimentales en servicios especializados y desacoplados:
+\begin{itemize}
+    \item \textbf{DatasetDownloader:} Servicio encargado de la adquisición de datos, abstrayendo la lógica de conexión con el Hugging Face Hub.
+    \item \textbf{DatasetProcessor:} Servicio de armonización y mezcla, garantizando la consistencia estructural mediante el formato Arrow.
+\end{itemize}
+
+Un pilar fundamental de esta implementación es la \textbf{idempotencia}. Cada servicio verifica el estado del sistema de archivos antes de ejecutar operaciones costosas (descargas de GBs o procesamientos intensivos). Si el recurso ya existe y es válido, el servicio omite la ejecución. Esta estrategia no solo reduce el tiempo de desarrollo y pruebas, sino que optimiza el uso de ancho de banda y computación en el entorno cloud, minimizando los costes operativos.
 
 \subsection{Pruebas Automatizadas y Calidad de Código}
 La fiabilidad del pipeline de datos y de la arquitectura del modelo se garantiza mediante una suite de pruebas unitarias implementada con el framework \texttt{pytest}. 

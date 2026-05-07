@@ -1,6 +1,7 @@
 import logging
 
-from app.dataset import download_datasets
+from app.dataset.downloader import DatasetDownloader
+from app.dataset.processor import DatasetProcessor
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -8,13 +9,21 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    logger.info("Starting TFM Small Language Model Pipeline")
+    """
+    Main entry point for the SLM pipeline.
+    Orchestrates the different services following SOLID principles.
+    """
+    logger.info("Starting SLM Dataset Pipeline")
 
-    # Phase 1: Download Datasets
-    logger.info("Phase 1: Downloading general-purpose datasets...")
-    download_datasets()
+    # 1. Dataset Downloading Service
+    downloader = DatasetDownloader()
+    downloader.download_all()
 
-    logger.info("Pipeline step completed successfully.")
+    # 2. Dataset Processing/Mixing Service
+    processor = DatasetProcessor()
+    processor.process(total_samples=100000)
+
+    logger.info("Pipeline execution finished.")
 
 
 if __name__ == "__main__":

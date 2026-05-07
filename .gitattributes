@@ -1,1 +1,3 @@
-report/** binary
+report/*.pdf binary merge=binary
+*.tex text
+report/**/*.tex text

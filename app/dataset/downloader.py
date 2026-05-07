@@ -22,39 +22,54 @@ class DatasetConfig(BaseModel):
     data_dir: str | None = None
 
 
-def download_datasets(output_dir: str = settings.datasets_dir) -> None:
+class DatasetDownloader:
     """
-    Downloads predefined datasets from Hugging Face and saves them locally.
+    Service responsible for downloading datasets from Hugging Face.
     """
-    _ensure_directory_exists(Path(output_dir))
 
-    for dataset_key, raw_config in DATASETS_CONFIG.items():
-        # Validate raw constant with Pydantic model
-        config = DatasetConfig(**raw_config)
-        _download_single_dataset(dataset_key, config, output_dir)
+    def __init__(self, output_dir: str = settings.datasets_dir):
+        self.output_dir = Path(output_dir)
+        self._ensure_directory_exists()
 
+    def download_all(self) -> None:
+        """Downloads all datasets defined in configuration."""
+        for key, raw_config in DATASETS_CONFIG.items():
+            config = DatasetConfig(**raw_config)
+            self.download_single(key, config)
 
-def _ensure_directory_exists(directory_path: Path) -> None:
-    if not directory_path.exists():
-        directory_path.mkdir(parents=True, exist_ok=True)
-        logger.info(f"Created directory: {directory_path}")
+    def download_single(self, key: str, config: DatasetConfig) -> None:
+        """
+        Downloads a single dataset if it doesn't already exist in the output directory.
+        """
+        if self._is_already_downloaded(key, config):
+            logger.info(f"Dataset '{key}' already exists. Skipping download.")
+            return
 
+        logger.info(f"Starting download for: {key} ({config.path})")
+        try:
+            load_dataset(
+                config.path,
+                name=config.name,
+                cache_dir=str(self.output_dir),
+                data_dir=config.data_dir,
+                trust_remote_code=settings.trust_remote_code,
+            )
+            logger.info(f"Successfully downloaded {key}")
+        except Exception as error:
+            logger.error(f"Failed to download {key}: {error}")
 
-def _download_single_dataset(key: str, config: DatasetConfig, output_dir: str) -> None:
-    logger.info(f"Starting download for: {key} ({config.path})")
+    def _is_already_downloaded(self, key: str, config: DatasetConfig) -> bool:
+        """
+        Checks if the dataset directory exists in the cache.
+        Hugging Face datasets are stored in cache_dir/path_to_dataset
+        """
+        # Simplistic check: if the folder exists and is not empty
+        # A more robust check would involve checking the actual HF lock files/metadata
+        safe_path = config.path.replace("/", "___")
+        dataset_path = self.output_dir / safe_path
+        return dataset_path.exists() and any(dataset_path.iterdir())
 
-    try:
-        load_dataset(
-            config.path,
-            name=config.name,
-            cache_dir=output_dir,
-            data_dir=config.data_dir,
-            trust_remote_code=settings.trust_remote_code,
-        )
-        logger.info(f"Successfully downloaded {key}")
-    except Exception as error:
-        logger.error(f"Failed to download {key}: {error}")
-
-
-if __name__ == "__main__":
-    download_datasets()
+    def _ensure_directory_exists(self) -> None:
+        if not self.output_dir.exists():
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+            logger.info(f"Created directory: {self.output_dir}")
