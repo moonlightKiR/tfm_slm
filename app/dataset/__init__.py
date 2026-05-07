@@ -1,3 +1,4 @@
-from .downloader import download_datasets
+from .downloader import DatasetDownloader
+from .processor import DatasetProcessor
 
-__all__ = ["download_datasets"]
+__all__ = ["DatasetDownloader", "DatasetProcessor"]
