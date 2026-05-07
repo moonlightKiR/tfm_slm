@@ -231,6 +231,7 @@ __marimo__/
 *.out
 *.bbl
 *.blg
+*.pdf
 
 # Mac OS
 .DS_Store
