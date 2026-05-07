@@ -71,8 +71,8 @@ class HybridModel(PreTrainedModel):
         x = self.embeddings(input_ids) + self.pos_embeddings(positions)
 
         # Transformer blocks (Global context)
-        # causal mask would be better for language modeling
-        mask = nn.Transformer.generate_square_causal_mask(seq_length).to(device)
+        # Fix: generate_square_subsequent_mask is the correct method in PyTorch
+        mask = nn.Transformer.generate_square_subsequent_mask(seq_length).to(device)
         x = self.transformer_encoder(x, mask=mask, is_causal=True)
 
         # GRU (Sequential refinement)

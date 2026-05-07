@@ -32,7 +32,7 @@ class TrainingService:
         self.tokenizer = AutoTokenizer.from_pretrained("gpt2")
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
-    def train(self, epochs: int = 5, batch_size: int = 16, lr: float = 1e-4):
+    def train(self, epochs: int = 1, batch_size: int = 4, lr: float = 1e-4):
         """
         Trains the hybrid architecture from scratch.
         """
@@ -69,19 +69,19 @@ class TrainingService:
         config = HybridConfig(
             vocab_size=self.tokenizer.vocab_size,
             max_position_embeddings=512,
-            hidden_size=512,  
-            num_layers=6,
-            num_heads=8,
-            intermediate_size=2048
+            hidden_size=256,  
+            num_layers=4,
+            num_heads=4,
+            intermediate_size=1024
         )
         
         logger.info("Initializing Hybrid Transformer-GRU Model from scratch...")
         model = HybridModel(config).to(self.device)
         
-        optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
+        optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
         
-        # 4. Mixed Precision Scaler for CUDA
-        scaler = torch.cuda.amp.GradScaler(enabled=torch.cuda.is_available())
+        # 4. Modern Mixed Precision Scaler
+        scaler = torch.amp.GradScaler('cuda', enabled=torch.cuda.is_available())
 
         logger.info(f"Training started: {len(tokenized_ds)} samples.")
         model.train()
@@ -95,8 +95,8 @@ class TrainingService:
 
                 input_ids = batch["input_ids"].to(self.device, non_blocking=True)
                 
-                # Causal language modeling: input_ids as labels
-                with torch.cuda.amp.autocast(enabled=torch.cuda.is_available()):
+                # Causal language modeling with modern amp API
+                with torch.amp.autocast('cuda', enabled=torch.cuda.is_available()):
                     outputs = model(input_ids, labels=input_ids)
                     loss = outputs["loss"]
 
@@ -110,7 +110,7 @@ class TrainingService:
             avg_loss = epoch_loss / len(dataloader)
             logger.info(f"Epoch {epoch+1} completed. Average Loss: {avg_loss:.4f}")
 
-        # 5. Export weights and config
+        # 5. Export
         output_dir = Path("output/nexus_slm_v1")
         output_dir.mkdir(parents=True, exist_ok=True)
         model.save_pretrained(output_dir)
