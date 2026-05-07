@@ -2,6 +2,7 @@ import logging
 
 from app.dataset.downloader import DatasetDownloader
 from app.dataset.processor import DatasetProcessor
+from app.training.trainer import TrainingService
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -21,9 +22,14 @@ def main():
 
     # 2. Dataset Processing/Mixing Service
     processor = DatasetProcessor()
-    processor.process(total_samples=100000)
+    processor.process(total_samples=10000)  # Reduced for initial testing
 
-    logger.info("Pipeline execution finished.")
+    # 3. Training Service (Hybrid Model)
+    logger.info("Phase 3: Training Hybrid Transformer-GRU Model...")
+    trainer = TrainingService()
+    trainer.train(epochs=1, batch_size=4)
+
+    logger.info("Pipeline execution finished successfully.")
 
 
 if __name__ == "__main__":
