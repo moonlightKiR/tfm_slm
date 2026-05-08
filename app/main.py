@@ -21,13 +21,15 @@ def main():
     downloader.download_all()
 
     # 2. Dataset Processing/Mixing Service
+    # Aumentado a 200k para un entrenamiento completo
     processor = DatasetProcessor()
-    processor.process(total_samples=10000)  # Reduced for initial testing
+    processor.process(total_samples=200000) 
 
     # 3. Training Service (Hybrid Model)
-    logger.info("Phase 3: Training Hybrid Transformer-GRU Model...")
+    logger.info("Phase 3: Training Hybrid Transformer-GRU Model from scratch...")
     trainer = TrainingService()
-    trainer.train(epochs=1, batch_size=4)
+    # Entrenamiento completo: 5 épocas y batch_size optimizado
+    trainer.train(epochs=5, batch_size=32)
 
     logger.info("Pipeline execution finished successfully.")
 
