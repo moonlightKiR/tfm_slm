@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     project_name: str = "tfm-slm"
     version: str = "0.1.0"
 
+    # Hardware configurations
+    gpu_vram_gb: int = 16
+
 
 # Global instance
 settings = Settings()

@@ -10,10 +10,13 @@ dependencies = [
     "huggingface-hub>=1.13.0",
     "pydantic>=2.13.3",
     "pydantic-settings>=2.14.0",
+    "torch>=2.11.0",
+    "tqdm>=4.67.3",
+    "transformers>=5.8.0",
 ]
 
 [project.scripts]
-nexus-slm = "app.main:main"
+tfm-slm = "app.main:main"
 
 [tool.uv]
 package = true
