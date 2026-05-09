@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.scripts]
-nexus-slm = "app.main:main"
+tfm-slm = "app.main:main"
 
 [tool.uv]
 package = true
