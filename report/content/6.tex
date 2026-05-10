@@ -1,7 +1,7 @@
 \section{MLOps: Despliegue y Puesta en Producción}
 \label{sec:mlops}
 
-El ciclo de vida del modelo culmina con su despliegue en un entorno de producción real, sustentado por una arquitectura de software robusta.
+El ciclo de vida del modelo culmina con su despliegue en un entorno de producción real, sustentado por una arquitectura de software robusta y procesos de integración continua (CI) altamente optimizados.
 
 \subsection{Arquitectura de Servicios e Idempotencia}
 La pipeline de datos se ha diseñado siguiendo los principios \textbf{SOLID}, transformando scripts procedimentales en servicios especializados y desacoplados:
@@ -10,12 +10,23 @@ La pipeline de datos se ha diseñado siguiendo los principios \textbf{SOLID}, tr
     \item \textbf{DatasetProcessor:} Servicio de armonización y mezcla, garantizando la consistencia estructural mediante el formato Arrow.
 \end{itemize}
 
-Un pilar fundamental de esta implementación es la \textbf{idempotencia}. Cada servicio verifica el estado del sistema de archivos antes de ejecutar operaciones costosas (descargas de GBs o procesamientos intensivos). Si el recurso ya existe y es válido, el servicio omite la ejecución. Esta estrategia no solo reduce el tiempo de desarrollo y pruebas, sino que optimiza el uso de ancho de banda y computación en el entorno cloud, minimizando los costes operativos.
+Un pilar fundamental de esta implementación es la \textbf{idempotencia}. Cada servicio verifica el estado del sistema de archivos antes de ejecutar operaciones costosas. Esta estrategia no solo reduce el tiempo de desarrollo, sino que optimiza el uso de recursos en la nube.
+
+\subsection{Reproducibilidad y Gestión de Dependencias}
+Para garantizar que el entrenamiento y la inferencia se ejecuten en entornos idénticos a través de diferentes plataformas (local, AWS, Kubernetes), se ha implementado una estrategia de gestión de dependencias basada en \textbf{uv}.
+
+\subsubsection{El rol de uv.lock en la Construcción de Imágenes}
+A diferencia de la gestión tradicional basada únicamente en \texttt{pyproject.toml}, este proyecto impone el uso del archivo de bloqueo \textbf{\texttt{uv.lock}} dentro del proceso de construcción de Docker. Esta decisión técnica asegura el determinismo absoluto del entorno, optimiza la caché de capas de Docker y proporciona una cadena de suministro de software segura mediante la verificación de \textit{hashes} criptográficos.
+
+\subsection{Optimización del Pipeline de CI: Estrategia de Caché Global}
+Dada la naturaleza pesada de las dependencias en proyectos de Deep Learning (ej. \texttt{torch}, \texttt{transformers}), se ha diseñado una estrategia de caché en GitHub Actions denominada \textbf{Global Caching with Smart Fallback}.
+
+En lugar de aislar la caché por rama, lo que obligaría a descargas redundantes de gigabytes en cada nueva funcionalidad, el sistema utiliza una caché compartida. GitHub Actions implementa una jerarquía donde el \textit{runner} busca primero una coincidencia exacta en la rama actual y, en su defecto, realiza un \textit{fallback} automático a la caché de la rama principal (\texttt{main}). Esto reduce drásticamente el tiempo de construcción de imágenes de aproximadamente 15 minutos a menos de 1 minuto en ejecuciones subsiguientes, maximizando la agilidad del ciclo de desarrollo.
 
 \subsection{Pruebas Automatizadas y Calidad de Código}
 La fiabilidad del pipeline de datos y de la arquitectura del modelo se garantiza mediante una suite de pruebas unitarias implementada con el framework \texttt{pytest}. 
 
-Para evitar la dependencia de servicios externos y minimizar los tiempos de ejecución, se utiliza la técnica de \textit{mocking} (objetos simulados). Esto permite validar la lógica de adquisición de datos, la integridad de los modelos de datos definidos con Pydantic y el flujo principal de la aplicación sin necesidad de realizar conexiones de red o descargas reales. Además, estas pruebas se han integrado en el flujo de desarrollo mediante \textit{hooks} de \textit{pre-commit}, garantizando que ningún cambio de código sea registrado si no supera satisfactoriamente todos los tests, manteniendo una cobertura de código superior al 95\%.
+Se utiliza la técnica de \textit{mocking} para validar la lógica de adquisición de datos y la integridad de los modelos Pydantic sin depender de conexiones externas. Estas pruebas se integran mediante \textit{hooks} de \textit{pre-commit}, manteniendo una cobertura superior al 95\%.
 
 \subsection{Orquestación con Kubernetes}
 Configuración del clúster de K8s para servir el modelo híbrido de forma escalable.
