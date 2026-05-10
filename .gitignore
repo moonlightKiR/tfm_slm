@@ -236,3 +236,7 @@ __marimo__/
 # Mac OS
 .DS_Store
 report/.DS_Store
+
+# Gemini CLI
+.geminiignore
+GEMINI.md
