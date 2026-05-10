@@ -1,14 +1,10 @@
 \section{MLOps: Despliegue y Puesta en Producción}
 \label{sec:mlops}
 
-El ciclo de vida del modelo culmina con su despliegue en un entorno de producción real, sustentado por una arquitectura de software robusta y procesos de integración continua (CI) altamente optimizados.
+El ciclo de vida del modelo culmina con su despliegue en un entorno de producción real, sustentado por una arquitectura de software robusta y procesos de integración continua (CI) altamente optimizados para la eficiencia de recursos.
 
 \subsection{Arquitectura de Servicios e Idempotencia}
-La pipeline de datos se ha diseñado siguiendo los principios \textbf{SOLID}, transformando scripts procedimentales en servicios especializados y desacoplados:
-\begin{itemize}
-    \item \textbf{DatasetDownloader:} Servicio encargado de la adquisición de datos, abstrayendo la lógica de conexión con el Hugging Face Hub.
-    \item \textbf{DatasetProcessor:} Servicio de armonización y mezcla, garantizando la consistencia estructural mediante el formato Arrow.
-\end{itemize}
+La pipeline de datos se ha diseñado siguiendo los principios \textbf{SOLID}, transformando scripts procedimentales en servicios especializados y desacoplados como \texttt{DatasetDownloader} y \texttt{DatasetProcessor}. Un pilar fundamental es la \textbf{idempotencia}: cada servicio verifica el estado del sistema antes de ejecutar operaciones costosas, optimizando el uso de recursos en la nube.
 
 Un pilar fundamental de esta implementación es la \textbf{idempotencia}. Cada servicio verifica el estado del sistema de archivos antes de ejecutar operaciones costosas. Esta estrategia no solo reduce el tiempo de desarrollo, sino que optimiza el uso de recursos en la nube.
 
@@ -23,10 +19,17 @@ Dada la naturaleza pesada de las dependencias en proyectos de Deep Learning (ej.
 
 En lugar de aislar la caché por rama, lo que obligaría a descargas redundantes de gigabytes en cada nueva funcionalidad, el sistema utiliza una caché compartida. GitHub Actions implementa una jerarquía donde el \textit{runner} busca primero una coincidencia exacta en la rama actual y, en su defecto, realiza un \textit{fallback} automático a la caché de la rama principal (\texttt{main}). Esto reduce drásticamente el tiempo de construcción de imágenes de aproximadamente 15 minutos a menos de 1 minuto en ejecuciones subsiguientes, maximizando la agilidad del ciclo de desarrollo.
 
-\subsection{Pruebas Automatizadas y Calidad de Código}
-La fiabilidad del pipeline de datos y de la arquitectura del modelo se garantiza mediante una suite de pruebas unitarias implementada con el framework \texttt{pytest}. 
+\subsection{Optimización del Pipeline de CI: Eficiencia y Velocidad}
+El flujo de integración continua en GitHub Actions se ha optimizado bajo dos vertientes: el tiempo de ejecución y el coste computacional.
 
-Se utiliza la técnica de \textit{mocking} para validar la lógica de adquisición de datos y la integridad de los modelos Pydantic sin depender de conexiones externas. Estas pruebas se integran mediante \textit{hooks} de \textit{pre-commit}, manteniendo una cobertura superior al 95\%.
+\subsubsection{Estrategia de Caché Global con Fallback}
+Dada la naturaleza pesada de las dependencias de Deep Learning, el sistema utiliza una caché compartida. GitHub Actions implementa una jerarquía donde el \textit{runner} busca primero en la rama actual y luego realiza un \textit{fallback} automático a \texttt{main}. Esto reduce el tiempo de build de 15 minutos a menos de 60 segundos.
+
+\subsubsection{Validación Basada en Revisión (PR-driven CI)}
+Como estrategia de ahorro de recursos, se ha implementado una política de ejecución dirigida por \textbf{Pull Requests}. A diferencia de los modelos tradicionales de CI que ejecutan un build completo en cada commit, este proyecto solo dispara el pipeline de Docker cuando el código está listo para revisión. Esta decisión técnica minimiza el consumo innecesario de minutos de computación durante el desarrollo activo, concentrando la validación exhaustiva en los hitos críticos de integración.
+
+\subsection{Pruebas Automatizadas y Calidad de Código}
+La fiabilidad se garantiza mediante una suite de pruebas con \texttt{pytest}, utilizando técnicas de \textit{mocking} para evitar dependencias externas. Estas pruebas se integran mediante \textit{hooks} de \textit{pre-commit}, manteniendo una cobertura superior al 95\%.
 
 \subsection{Orquestación con Kubernetes}
 Configuración del clúster de K8s para servir el modelo híbrido de forma escalable.
