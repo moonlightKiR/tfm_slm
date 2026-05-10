@@ -6,8 +6,18 @@ El ciclo de vida del modelo culmina con su despliegue en un entorno de producci�
 \subsection{Arquitectura de Servicios e Idempotencia}
 La pipeline de datos se ha diseñado siguiendo los principios \textbf{SOLID}, transformando scripts procedimentales en servicios especializados y desacoplados como \texttt{DatasetDownloader} y \texttt{DatasetProcessor}. Un pilar fundamental es la \textbf{idempotencia}: cada servicio verifica el estado del sistema antes de ejecutar operaciones costosas, optimizando el uso de recursos en la nube.
 
+Un pilar fundamental de esta implementación es la \textbf{idempotencia}. Cada servicio verifica el estado del sistema de archivos antes de ejecutar operaciones costosas. Esta estrategia no solo reduce el tiempo de desarrollo, sino que optimiza el uso de recursos en la nube.
+
 \subsection{Reproducibilidad y Gestión de Dependencias}
-Para garantizar que el modelo se ejecute en entornos idénticos (local, AWS, Kubernetes), se utiliza el gestor \textbf{uv} y su archivo de bloqueo \textbf{\texttt{uv.lock}}. Esto asegura el determinismo absoluto del entorno, optimiza la caché de Docker y proporciona seguridad mediante la verificación de \textit{hashes} criptográficos.
+Para garantizar que el entrenamiento y la inferencia se ejecuten en entornos idénticos a través de diferentes plataformas (local, AWS, Kubernetes), se ha implementado una estrategia de gestión de dependencias basada en \textbf{uv}.
+
+\subsubsection{El rol de uv.lock en la Construcción de Imágenes}
+A diferencia de la gestión tradicional basada únicamente en \texttt{pyproject.toml}, este proyecto impone el uso del archivo de bloqueo \textbf{\texttt{uv.lock}} dentro del proceso de construcción de Docker. Esta decisión técnica asegura el determinismo absoluto del entorno, optimiza la caché de capas de Docker y proporciona una cadena de suministro de software segura mediante la verificación de \textit{hashes} criptográficos.
+
+\subsection{Optimización del Pipeline de CI: Estrategia de Caché Global}
+Dada la naturaleza pesada de las dependencias en proyectos de Deep Learning (ej. \texttt{torch}, \texttt{transformers}), se ha diseñado una estrategia de caché en GitHub Actions denominada \textbf{Global Caching with Smart Fallback}.
+
+En lugar de aislar la caché por rama, lo que obligaría a descargas redundantes de gigabytes en cada nueva funcionalidad, el sistema utiliza una caché compartida. GitHub Actions implementa una jerarquía donde el \textit{runner} busca primero una coincidencia exacta en la rama actual y, en su defecto, realiza un \textit{fallback} automático a la caché de la rama principal (\texttt{main}). Esto reduce drásticamente el tiempo de construcción de imágenes de aproximadamente 15 minutos a menos de 1 minuto en ejecuciones subsiguientes, maximizando la agilidad del ciclo de desarrollo.
 
 \subsection{Optimización del Pipeline de CI: Eficiencia y Velocidad}
 El flujo de integración continua en GitHub Actions se ha optimizado bajo dos vertientes: el tiempo de ejecución y el coste computacional.
