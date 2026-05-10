@@ -1,23 +1,13 @@
 \section{MLOps: Despliegue y Puesta en Producción}
 \label{sec:mlops}
 
-El ciclo de vida del modelo culmina con su despliegue en un entorno de producción real, sustentado por una arquitectura de software robusta y procesos de integración continua (CI) altamente optimizados para la eficiencia de recursos.
+El ciclo de vida del modelo culmina con su despliegue en un entorno de producción real, sustentado por una arquitectura de software robusta y procesos de gobernanza de código altamente automatizados.
 
 \subsection{Arquitectura de Servicios e Idempotencia}
 La pipeline de datos se ha diseñado siguiendo los principios \textbf{SOLID}, transformando scripts procedimentales en servicios especializados y desacoplados como \texttt{DatasetDownloader} y \texttt{DatasetProcessor}. Un pilar fundamental es la \textbf{idempotencia}: cada servicio verifica el estado del sistema antes de ejecutar operaciones costosas, optimizando el uso de recursos en la nube.
 
-Un pilar fundamental de esta implementación es la \textbf{idempotencia}. Cada servicio verifica el estado del sistema de archivos antes de ejecutar operaciones costosas. Esta estrategia no solo reduce el tiempo de desarrollo, sino que optimiza el uso de recursos en la nube.
-
 \subsection{Reproducibilidad y Gestión de Dependencias}
-Para garantizar que el entrenamiento y la inferencia se ejecuten en entornos idénticos a través de diferentes plataformas (local, AWS, Kubernetes), se ha implementado una estrategia de gestión de dependencias basada en \textbf{uv}.
-
-\subsubsection{El rol de uv.lock en la Construcción de Imágenes}
-A diferencia de la gestión tradicional basada únicamente en \texttt{pyproject.toml}, este proyecto impone el uso del archivo de bloqueo \textbf{\texttt{uv.lock}} dentro del proceso de construcción de Docker. Esta decisión técnica asegura el determinismo absoluto del entorno, optimiza la caché de capas de Docker y proporciona una cadena de suministro de software segura mediante la verificación de \textit{hashes} criptográficos.
-
-\subsection{Optimización del Pipeline de CI: Estrategia de Caché Global}
-Dada la naturaleza pesada de las dependencias en proyectos de Deep Learning (ej. \texttt{torch}, \texttt{transformers}), se ha diseñado una estrategia de caché en GitHub Actions denominada \textbf{Global Caching with Smart Fallback}.
-
-En lugar de aislar la caché por rama, lo que obligaría a descargas redundantes de gigabytes en cada nueva funcionalidad, el sistema utiliza una caché compartida. GitHub Actions implementa una jerarquía donde el \textit{runner} busca primero una coincidencia exacta en la rama actual y, en su defecto, realiza un \textit{fallback} automático a la caché de la rama principal (\texttt{main}). Esto reduce drásticamente el tiempo de construcción de imágenes de aproximadamente 15 minutos a menos de 1 minuto en ejecuciones subsiguientes, maximizando la agilidad del ciclo de desarrollo.
+Para garantizar que el modelo se ejecute en entornos idénticos (local, AWS, Kubernetes), se utiliza el gestor \textbf{uv} y su archivo de bloqueo \textbf{\texttt{uv.lock}}. Esto asegura el determinismo absoluto del entorno, optimiza la caché de Docker y proporciona seguridad mediante la verificación de \textit{hashes} criptográficos.
 
 \subsection{Optimización del Pipeline de CI: Eficiencia y Velocidad}
 El flujo de integración continua en GitHub Actions se ha optimizado bajo dos vertientes: el tiempo de ejecución y el coste computacional.
@@ -26,7 +16,15 @@ El flujo de integración continua en GitHub Actions se ha optimizado bajo dos ve
 Dada la naturaleza pesada de las dependencias de Deep Learning, el sistema utiliza una caché compartida. GitHub Actions implementa una jerarquía donde el \textit{runner} busca primero en la rama actual y luego realiza un \textit{fallback} automático a \texttt{main}. Esto reduce el tiempo de build de 15 minutos a menos de 60 segundos.
 
 \subsubsection{Validación Basada en Revisión (PR-driven CI)}
-Como estrategia de ahorro de recursos, se ha implementado una política de ejecución dirigida por \textbf{Pull Requests}. A diferencia de los modelos tradicionales de CI que ejecutan un build completo en cada commit, este proyecto solo dispara el pipeline de Docker cuando el código está listo para revisión. Esta decisión técnica minimiza el consumo innecesario de minutos de computación durante el desarrollo activo, concentrando la validación exhaustiva en los hitos críticos de integración.
+Se ha implementado una política de ejecución dirigida por \textbf{Pull Requests}. El pipeline de Docker solo se dispara cuando el código está listo para revisión, minimizando el consumo innecesario de recursos durante el desarrollo activo.
+
+\subsection{Integridad del Código y Gobernanza mediante Rulesets}
+Para asegurar la estabilidad de la rama principal (\texttt{main}), se ha configurado un \textbf{GitHub Repository Ruleset} que impone los siguientes controles de calidad:
+\begin{itemize}
+    \item \textbf{Fusión exclusiva vía PR:} Se prohíben los cambios directos en la rama principal, obligando a un proceso de revisión formal.
+    \item \textbf{Status Checks Obligatorios:} El pipeline de construcción de Docker (\texttt{Docker Image CI}) debe finalizar con éxito antes de permitir cualquier integración.
+    \item \textbf{Revisión Asistida por IA:} Se ha integrado \textbf{GitHub Copilot Code Review} de forma automática en el ruleset. Esto garantiza que cada cambio sea analizado por modelos de lenguaje avanzados para detectar vulnerabilidades, errores lógicos y asegurar el cumplimiento de las mejores prácticas antes de la intervención humana.
+\end{itemize}
 
 \subsection{Pruebas Automatizadas y Calidad de Código}
 La fiabilidad se garantiza mediante una suite de pruebas con \texttt{pytest}, utilizando técnicas de \textit{mocking} para evitar dependencias externas. Estas pruebas se integran mediante \textit{hooks} de \textit{pre-commit}, manteniendo una cobertura superior al 95\%.
