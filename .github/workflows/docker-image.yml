@@ -1,6 +1,8 @@
 name: Docker Image CI
 
 on:
+  push:
+    branches: [ "main" ]
   pull_request:
     branches: [ "**" ]
 
@@ -14,6 +16,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      actions: write
 
     steps:
       - name: Checkout repository
@@ -48,5 +51,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: |
+            type=gha,scope=tfm-slm
+            type=gha,scope=main
+          cache-to: type=gha,mode=max,scope=tfm-slm
