@@ -1,23 +1,22 @@
-# This workflow will build and push a new container image to Amazon ECR,
-# and then will trigger a training run on a specific EC2 instance using AWS SSM.
-
-name: Deploy and Train on EC2
+# This workflow builds the SLM Docker image and pushes it to Amazon ECR.
+name: Build and Push to ECR
 
 on:
   push:
+    branches: [ "main" ]
+  pull_request:
     branches: [ "main" ]
 
 env:
   AWS_REGION: eu-south-2
   ECR_REPOSITORY: tfm-slm
-  EC2_INSTANCE_ID: i-0b5ac3f5117057ef9
 
 permissions:
   contents: read
 
 jobs:
-  deploy:
-    name: Build and Train
+  build-and-push:
+    name: Build and Push
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -40,8 +39,7 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build, tag, and push image to Amazon ECR
-      id: build-image
+    - name: Build and push to ECR
       uses: docker/build-push-action@v5
       with:
         context: .
@@ -51,28 +49,4 @@ jobs:
           ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
         cache-from: type=gha,scope=tfm-slm
         cache-to: type=gha,mode=max,scope=tfm-slm
-
-    - name: Execute training command on EC2 via SSM
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        # Commands to be executed on the EC2 instance
-        # 1. Login to ECR
-        # 2. Pull the specific image tag
-        # 3. Stop/Remove existing training container
-        # 4. Run the new container with GPU support
-        
-        COMMAND="aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY && \
-                 docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG && \
-                 docker stop tfm-training || true && \
-                 docker rm tfm-training || true && \
-                 docker run --gpus all --name tfm-training -d $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-
-        aws ssm send-command \
-          --instance-ids "${{ env.EC2_INSTANCE_ID }}" \
-          --document-name "AWS-RunShellScript" \
-          --parameters "commands=[$COMMAND]" \
-          --region ${{ env.AWS_REGION }} \
-          --comment "Triggering SLM training for commit ${{ github.sha }}"
 
