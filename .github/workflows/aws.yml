@@ -19,7 +19,8 @@ jobs:
   deploy:
     name: Build and Train
     runs-on: ubuntu-latest
-    environment: production
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
     - name: Checkout
