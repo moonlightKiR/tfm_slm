@@ -7,11 +7,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "tfm-slm-terraform-state"
-    key            = "terraform.tfstate"
-    region         = "eu-south-2"
-    encrypt        = true
-    dynamodb_table = "tfm-slm-terraform-lock"
+    bucket       = "tfm-slm-terraform-state"
+    key          = "terraform.tfstate"
+    region       = "eu-south-2"
+    encrypt      = true
+    use_lockfile = true
   }
 }
 
