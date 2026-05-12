@@ -21,13 +21,15 @@ Se ha implementado una política de ejecución dirigida por \textbf{Pull Request
 \subsection{Integridad del Código y Gobernanza mediante Rulesets}
 Para asegurar la estabilidad de la rama principal (\texttt{main}), se ha configurado un \textbf{GitHub Repository Ruleset} que impone los siguientes controles de calidad:
 \begin{itemize}
-    \item \textbf{Fusión exclusiva vía PR:} Se prohíben los cambios directos en la rama principal, obligando a un proceso de revisión formal.
+    \item \textbf{Fusión exclusiva vía PR:} Se prohíben los cambios directos en la rama principal, obligando a un proceso de revisión formal. Cada \textit{Pull Request} debe seguir una estructura estandarizada para facilitar la revisión, incluyendo secciones de \textit{Summary}, \textit{Issue type}, \textit{Component name}, \textit{Additional information} y \textit{Validation}, documentadas en un archivo \texttt{.md} adjunto.
     \item \textbf{Status Checks Obligatorios:} El pipeline de construcción de Docker (\texttt{Docker Image CI}) debe finalizar con éxito antes de permitir cualquier integración.
     \item \textbf{Revisión Asistida por IA:} Se ha integrado \textbf{GitHub Copilot Code Review} de forma automática en el ruleset. Esto garantiza que cada cambio sea analizado por modelos de lenguaje avanzados para detectar vulnerabilidades, errores lógicos y asegurar el cumplimiento de las mejores prácticas antes de la intervención humana.
 \end{itemize}
 
 \subsection{Pruebas Automatizadas y Calidad de Código}
 La fiabilidad se garantiza mediante una suite de pruebas con \texttt{pytest}, utilizando técnicas de \textit{mocking} para evitar dependencias externas. Estas pruebas se integran mediante \textit{hooks} de \textit{pre-commit}, manteniendo una cobertura superior al 95\%.
+
+Adicionalmente, se emplea \textbf{Ruff} como herramienta unificada de \textit{linting} y formateo. Ruff permite asegurar la consistencia estilística y la detección de errores estáticos de forma extremadamente rápida, integrándose tanto en el flujo de desarrollo local (\texttt{ruff check} y \texttt{ruff format}) como en los procesos de integración continua.
 
 \subsection{Orquestación con Kubernetes}
 Configuración del clúster de K8s para servir el modelo híbrido de forma escalable.
