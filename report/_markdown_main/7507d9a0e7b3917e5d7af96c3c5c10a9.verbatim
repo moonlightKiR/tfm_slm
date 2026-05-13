@@ -1,0 +1,4 @@
+aws s3api create-bucket \
+    --bucket tfm-slm-terraform-state \
+    --region eu-south-2 \
+    --create-bucket-configuration LocationConstraint=eu-south-2

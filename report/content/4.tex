@@ -68,5 +68,4 @@ El modelo se ha dimensionado para ser competitivo en el rango de los 124 millone
 \end{itemize}
 
 \subsection{Optimización y Estabilidad del Entrenamiento}
-Para garantizar que la arquitectura híbrida sea entrenable desde cero de forma estable, se han aplicado técnicas de inicialización y normalización avanzadas. Todos los pesos lineales se inicializan mediante una distribución normal con $\sigma = 0.02$, mientras que las capas de normalización comienzan con ganancia unidad y sesgo cero. El uso de \textit{causal masking} en cada bloque asegura que la parte de atención no rompa la naturaleza autorregresiva necesaria para la generación de lenguaje.
-trando la eficiencia de la arquitectura híbrida en entornos de recursos limitados.
+Para garantizar que la arquitectura híbrida sea entrenable desde cero de forma estable, se han aplicado técnicas de inicialización y normalización avanzadas. Todos los pesos lineales se inicializan mediante una distribución normal con $\sigma = 0.02$, mientras que las capas de normalización comienzan con ganancia unidad y sesgo cero. El uso de \textit{causal masking} en cada bloque asegura que la parte de atención no rompa la naturaleza autorregresiva necesaria para la generación de lenguaje, demostrando la eficiencia de la arquitectura híbrida en entornos de recursos limitados.
