@@ -28,8 +28,9 @@ def main():
     # 3. Training Service (Hybrid Model)
     logger.info("Phase 3: Training Hybrid Transformer-GRU Model from scratch...")
     trainer = TrainingService()
-    # Entrenamiento completo: 5 épocas y batch_size optimizado
-    trainer.train(epochs=5, batch_size=32)
+    # Optimized for 24GB VRAM (NVIDIA L4)
+    # Physical batch size = 4, Accumulation = 8 => Effective batch size = 32
+    trainer.train(epochs=5, batch_size=4, grad_accum_steps=8)
 
     logger.info("Pipeline execution finished successfully.")
 
