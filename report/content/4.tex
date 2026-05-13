@@ -47,7 +47,7 @@ Instrucciones & Alpaca & 50\% & Seguimiento de instrucciones y estructura resolu
 \end{table}
 
 \subsection{Arquitectura del Modelo: Hybrid Transformer-GRU}
-La innovación técnica central de este modelo, denominado \texttt{Nexus-SLM}, radica en su arquitectura de bloques híbridos integrados. A diferencia de enfoques que simplemente concatenan capas, cada uno de los 12 bloques del modelo fusiona capacidades globales y secuenciales.
+La innovación técnica central de este modelo, denominado \texttt{tfm-slm}, radica en su arquitectura de bloques híbridos integrados. A diferencia de enfoques que simplemente concatenan capas, cada uno de los 12 bloques del modelo fusiona capacidades globales y secuenciales.
 
 \subsubsection{El Bloque Híbrido (HybridBlock)}
 Cada capa del modelo está compuesta por tres sub-componentes principales protegidos por conexiones residuales y normalización previa (\textit{Pre-LayerNorm}):
@@ -68,5 +68,4 @@ El modelo se ha dimensionado para ser competitivo en el rango de los 124 millone
 \end{itemize}
 
 \subsection{Optimización y Estabilidad del Entrenamiento}
-Para garantizar que la arquitectura híbrida sea entrenable desde cero de forma estable, se han aplicado técnicas de inicialización y normalización avanzadas. Todos los pesos lineales se inicializan mediante una distribución normal con $\sigma = 0.02$, mientras que las capas de normalización comienzan con ganancia unidad y sesgo cero. El uso de \textit{causal masking} en cada bloque asegura que la parte de atención no rompa la naturaleza autorregresiva necesaria para la generación de lenguaje.
-trando la eficiencia de la arquitectura híbrida en entornos de recursos limitados.
+Para garantizar que la arquitectura híbrida sea entrenable desde cero de forma estable, se han aplicado técnicas de inicialización y normalización avanzadas. Todos los pesos lineales se inicializan mediante una distribución normal con $\sigma = 0.02$, mientras que las capas de normalización comienzan con ganancia unidad y sesgo cero. El uso de \textit{causal masking} en cada bloque asegura que la parte de atención no rompa la naturaleza autorregresiva necesaria para la generación de lenguaje, demostrando la eficiencia de la arquitectura híbrida en entornos de recursos limitados.

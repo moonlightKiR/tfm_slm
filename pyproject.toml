@@ -5,6 +5,7 @@ description = "slm for tfm (transformers and gru)"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "boto3>=1.43.6",
     "datasets>=4.8.5",
     "httpx>=0.28.1",
     "huggingface-hub>=1.13.0",

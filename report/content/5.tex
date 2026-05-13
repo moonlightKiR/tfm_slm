@@ -1,41 +1,19 @@
 \section{Infraestructura Cloud y Análisis de Costes}
 \label{sec:infraestructura}
 
-Uno de los pilares de este trabajo es la demostración de la viabilidad económica del proyecto mediante el uso de infraestructura cloud optimizada.
+Uno de los pilares de este trabajo es la demostración de la viabilidad económica del proyecto mediante el uso de infraestructura cloud optimizada y automatizada. La arquitectura de hardware seleccionada no solo responde a necesidades de rendimiento, sino que se integra en un flujo de despliegue continuo donde la intervención humana es mínima.
 
-\subsection{Ecosistema AWS: ECS y ECR}
-Para el despliegue y orquestación del modelo, se ha seleccionado Amazon Web Services (AWS), aprovechando los siguientes servicios:
-\begin{itemize}
-    \item \textbf{Amazon Elastic Container Registry (ECR):} Actúa como el repositorio privado de imágenes de Docker, integrado totalmente con el flujo de CI/CD de GitHub Actions.
-    \item \textbf{Amazon Elastic Container Service (ECS):} Se utiliza para la orquestación de los contenedores. A diferencia de un despliegue en instancias EC2 puras, ECS facilita la gestión del ciclo de vida de la aplicación, el escalado y el autorreparado de tareas.
-\end{itemize}
+\subsection{Ecosistema AWS: Provisión de Recursos}
+Para el despliegue del entorno de entrenamiento, se ha seleccionado Amazon Web Services (AWS) debido a su madurez en servicios de computación acelerada y su capacidad de ofrecer recursos de alto rendimiento bajo demanda.
 
-\subsection{Estrategia de Spot Instances}
-El coste es el principal inhibidor en el desarrollo de modelos de lenguaje. Para mitigar esto, el clúster de ECS se ha configurado para utilizar \textbf{Amazon EC2 Spot Instances}. Estas instancias permiten acceder a la capacidad computacional sobrante de AWS con descuentos de hasta el 90\% sobre el precio de las instancias bajo demanda. 
+\subsubsection{Repositorio de Imágenes: Amazon ECR}
+Amazon Elastic Container Registry (ECR) actúa como el repositorio privado del proyecto. Se ha integrado en el flujo de CI/CD para almacenar las imágenes Docker del modelo tfm-slm, etiquetadas dinámicamente con el SHA del commit para garantizar la trazabilidad entre el código fuente y el binario desplegado.
 
-\subsubsection{Identificación y Etiquetado}
-Siguiendo las buenas prácticas de gestión de infraestructura, cada instancia se identifica mediante etiquetas (*tags*). Se ha definido el nombre \texttt{nexus-slm} (asignado a la clave \texttt{Name}) como estándar para permitir un seguimiento sencillo de los recursos activos en la consola de AWS y mediante scripts de automatización.
+\subsection{Selección del Hardware: Familia G6 y NVIDIA L4}
+La elección de la potencia de cómputo es el factor determinante en el tiempo de entrenamiento de un Small Language Model. AWS ofrece diversas familias de instancias optimizadas para computación acelerada, cada una con un hardware GPU específico diseñado para distintos casos de uso.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.8\textwidth]{images/aws_infrastructure/instance_name.png}
-    \caption{Configuración del nombre de la instancia en la consola de AWS.}
-    \label{fig:aws_instance_name}
-\end{figure}
-
-\subsubsection{Selección de la Imagen de Máquina (AMI)}
-Para que el software sea capaz de comunicarse eficientemente con el hardware de aceleración, es crítico seleccionar una \textit{Amazon Machine Image} (AMI) que proporcione el entorno base adecuado.
-
-Se ha seleccionado la AMI: \textbf{Deep Learning Base AMI with Single CUDA (Amazon Linux 2023)}. Esta imagen viene preconfigurada con los \textit{drivers} de NVIDIA y el \textit{toolkit} de CUDA necesarios para el entrenamiento del modelo, eliminando la complejidad técnica de la instalación manual y garantizando la compatibilidad entre el kernel de Linux y los núcleos Tensor de la GPU.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.8\textwidth]{images/aws_infrastructure/AMI.png}
-    \caption{Interfaz de selección de la AMI especializada para Deep Learning con soporte CUDA.}
-    \label{fig:aws_ami}
-\end{figure}
-
-Esta elección habilita el uso de una amplia gama de instancias optimizadas para computación acelerada. A continuación, se detallan las familias de instancias compatibles y sus especificaciones de hardware:
+\subsubsection{Comparativa de Familias de Aceleración}
+Como se detalla en la Tabla \ref{tab:aws_instances}, existen opciones que van desde la inferencia ligera (G4dn) hasta el entrenamiento masivo de LLMs (P5). Para este proyecto, se ha seleccionado la familia \textbf{G6} por su equilibrio óptimo entre capacidad de VRAM (24 GB) y coste operativo en modalidad Spot.
 
 \begin{table}[H]
 \centering
@@ -44,42 +22,61 @@ Esta elección habilita el uso de una amplia gama de instancias optimizadas para
 \textbf{Instancia} & \textbf{Hardware GPU} & \textbf{Propósito Principal} \\ \hline
 \texttt{G4dn} & NVIDIA T4 (16 GB VRAM) & Inferencia y entrenamiento ligero \\ \hline
 \texttt{G5} & NVIDIA A10G (24 GB VRAM) & Entrenamiento de modelos SLM / Gráficos \\ \hline
-\texttt{G6 / Gr6} & NVIDIA L4 (24 GB VRAM) & Eficiencia energética y IA generativa \\ \hline
-\texttt{G6e} & NVIDIA L40S (48 GB VRAM) & LLMs de tamaño medio y LLM Fine-tuning \\ \hline
-\texttt{P4d / P4de} & NVIDIA A100 (40/80 GB VRAM) & Cómputo de alto rendimiento (HPC) \\ \hline
-\texttt{P5 / P5e / P5en} & NVIDIA H100 (80 GB VRAM) & Entrenamiento de modelos de lenguaje masivos \\ \hline
-\texttt{P6-B200 / B300} & NVIDIA Blackwell & Próxima generación de IA de ultra-escala \\ \hline
+\texttt{G6} & NVIDIA L4 (24 GB VRAM) & Eficiencia energética y IA generativa \\ \hline
+\texttt{G6e} & NVIDIA L40S (48 GB VRAM) & Fine-tuning de LLMs de tamaño medio \\ \hline
+\texttt{P4 / P5} & NVIDIA A100 / H100 & Cómputo de alto rendimiento (HPC) \\ \hline
 \end{tabularx}
-\caption{Familias de instancias EC2 soportadas por la AMI de Deep Learning y su hardware asociado.}
+\caption{Ecosistema de aceleradores NVIDIA disponibles en AWS EC2.}
 \label{tab:aws_instances}
 \end{table}
 
-\subsubsection{Selección del Hardware: Tipo de Instancia}
-Tras definir el entorno de software, el siguiente paso crítico es la elección del hardware subyacente. El tipo de instancia de EC2 determina la capacidad de CPU, memoria ram, almacenamiento y rendimiento de red del host que ejecutará el modelo.
-
-Para este proyecto, se ha seleccionado la familia de instancias \textbf{G6}. Esta elección se fundamenta en la necesidad de disponer de una gran capacidad de memoria de video (VRAM) y un ancho de banda de memoria elevado, factores indispensables para almacenar y procesar los pesos de la arquitectura Transformer y los estados ocultos de la GRU durante el entrenamiento.
-
-Consultando las especificaciones técnicas oficiales de AWS, observamos que la familia G6 ofrece diversas configuraciones escalables basadas en procesadores AMD EPYC 7R13 y aceleradores NVIDIA L4:
+\subsubsection{Arquitectura NVIDIA Ada Lovelace en G6}
+La instancia seleccionada, \texttt{g6.2xlarge}, cuenta con un acelerador \textbf{NVIDIA L4}. Esta GPU destaca por sus núcleos Tensor de cuarta generación y soporte nativo de \textit{bfloat16}. Las especificaciones detalladas del hardware se muestran en la Figura \ref{fig:aws_g6_specs}, documentando la capacidad de procesamiento del nodo utilizado para el entrenamiento del tfm-slm.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{images/aws_infrastructure/G6_instance_0.png}
-    \includegraphics[width=0.9\textwidth]{images/aws_infrastructure/G6_instance_1.png}
-    \caption{Especificaciones de hardware para las diferentes variantes de la familia de instancias G6.}
+    \includegraphics[width=0.95\textwidth]{images/aws_infrastructure/G6_instance_0.png}
+    \includegraphics[width=0.95\textwidth]{images/aws_infrastructure/G6_instance_1.png}
+    \caption{Especificaciones técnicas de la familia de instancias G6 (Fuente: AWS Documentation).}
     \label{fig:aws_g6_specs}
 \end{figure}
 
-La versatilidad de la serie G6 permite desde configuraciones económicas con una sola GPU (como la \texttt{g6.xlarge} con 22 GB de VRAM) hasta potentes nodos de cómputo con múltiples aceleradores, proporcionando el equilibrio ideal entre coste y rendimiento para un Small Language Model.
+\subsection{Gestión de Infraestructura mediante Terraform}
+Para garantizar la reproducibilidad del entorno, se ha implementado una arquitectura de \textbf{Infraestructura como Código (IaC)} utilizando Terraform. Toda la configuración reside en el directorio \texttt{app/terraform/}, lo que permite levantar el entorno completo de forma automática.
 
-\subsubsection{Configuración Técnica y Automatización}
-Para garantizar la estabilidad del entrenamiento bajo el modelo de subasta de Spot, se han implementado las siguientes configuraciones técnicas adicionales:
+\subsubsection{Automatización y Prerrequisitos}
+Gracias a la automatización implementada, el único requisito manual para el despliegue es la existencia de una clave SSH (\textit{Key Pair}) denominada \texttt{tfm-slm} en la cuenta de AWS. El resto del proceso está codificado y es totalmente transparente para el desarrollador:
 \begin{itemize}
-    \item \textbf{Launch Templates:} Definición de plantillas de lanzamiento que especifican las familias detalladas anteriormente, permitiendo que el clúster elija dinámicamente según disponibilidad.
-    \item \textbf{Capacity Providers:} Gestión del escalado automático de las instancias de infraestructura.
-    \item \textbf{Gestión de Interrupciones:} Señales de terminación de 2 minutos para realizar el guardado automático (\textit{checkpointing}) en Amazon S3.
+    \item \textbf{Selección de AMI:} Se utiliza la \textit{Deep Learning Base AMI} (Figura \ref{fig:aws_ami}) para garantizar un sistema operativo con drivers NVIDIA y CUDA preinstalados.
+    \item \textbf{Provisionamiento Spot:} Terraform solicita la instancia buscando el menor coste en la región de España (\texttt{eu-south-2}).
+    \item \textbf{Orquestación del Arranque:} Mediante scripts de \textit{User Data}, la instancia se auto-configura al arrancar, instalando el motor Docker y lanzando el entrenamiento sin intervención manual.
 \end{itemize}
 
-Esta estrategia es ideal para las fases de entrenamiento y fine-tuning del SLM, donde la tolerancia a interrupciones es gestionada mediante la capacidad de ECS para relanzar tareas automáticamente en nuevas instancias disponibles.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/aws_infrastructure/AMI.png}
+    \caption{Selección automatizada de la AMI especializada para Deep Learning mediante Terraform.}
+    \label{fig:aws_ami}
+\end{figure}
+
+\subsection{Optimización de Memoria: Batching y Aprovechamiento de VRAM}
+Con el hardware desplegado, se procede a ajustar el software para aprovechar los 24 GB de la NVIDIA L4.
+
+\subsubsection{Estrategia de Gradient Accumulation}
+Se utiliza la técnica de acumulación para simular lotes grandes sin saturar la VRAM. La Tabla \ref{tab:training_configs} resume la evolución desde el error inicial hasta la configuración óptima alcanzada durante las pruebas de estrés.
+
+\begin{table}[H]
+    \centering
+    \begin{tabularx}{\textwidth}{|l|c|c|c|X|}
+        \hline
+        \textbf{Configuración} & \textbf{Batch Físico} & \textbf{Acumulación} & \textbf{Batch Efectivo} & \textbf{Resultado} \\ \hline
+        Base                   & 32                    & 1                    & 32                      & Error OOM (Falla)  \\ \hline
+        Conservadora           & 4                     & 8                    & 32                      & Estable (Lento)    \\ \hline
+        Optimizada             & 16                    & 2                    & 32                      & Punto óptimo (97\% Util.) \\ \hline
+    \end{tabularx}
+    \caption{Ajustes de memoria para maximizar el uso de la GPU NVIDIA L4.}
+    \label{tab:training_configs}
+\end{table}
 
 \subsection{Evaluación de Rendimiento vs Coste}
 Presentación de gráficas y métricas que comparan el tiempo de ejecución con el gasto económico real, demostrando la eficiencia de la arquitectura híbrida en entornos de recursos limitados.

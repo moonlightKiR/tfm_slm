@@ -4,10 +4,14 @@ from unittest.mock import MagicMock, patch
 from app.main import main
 
 
+@patch("app.main.TrainingService")
 @patch("app.main.DatasetProcessor")
 @patch("app.main.DatasetDownloader")
 def test_main_calls_services(
-    mock_downloader_cls: MagicMock, mock_processor_cls: MagicMock, caplog
+    mock_downloader_cls: MagicMock,
+    mock_processor_cls: MagicMock,
+    mock_trainer_cls: MagicMock,
+    caplog,
 ):
     """
     Test that the main function correctly orchestrates the services.
@@ -15,6 +19,7 @@ def test_main_calls_services(
     # Create instances returned by the mocked classes
     mock_downloader = mock_downloader_cls.return_value
     mock_processor = mock_processor_cls.return_value
+    mock_trainer = mock_trainer_cls.return_value
 
     with caplog.at_level(logging.INFO):
         main()
@@ -24,8 +29,13 @@ def test_main_calls_services(
     mock_downloader.download_all.assert_called_once()
 
     mock_processor_cls.assert_called_once()
-    mock_processor.process.assert_called_once_with(total_samples=100000)
+    mock_processor.process.assert_called_once_with(total_samples=200000)
+
+    mock_trainer_cls.assert_called_once()
+    mock_trainer.train.assert_called_once_with(
+        epochs=5, batch_size=16, grad_accum_steps=2
+    )
 
     # Verify that logs are generated correctly
     assert "Starting SLM Dataset Pipeline" in caplog.text
-    assert "Pipeline execution finished." in caplog.text
+    assert "Pipeline execution finished successfully." in caplog.text
