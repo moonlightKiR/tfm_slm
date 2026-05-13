@@ -197,7 +197,7 @@ class TrainingService:
                 logger.error(f"Failed to sync checkpoint to S3: {e}")
 
         # 5. Export Final Model
-        output_dir = checkpoint_dir / "nexus_slm_v1"
+        output_dir = checkpoint_dir / "tfm_slm_v1"
         output_dir.mkdir(parents=True, exist_ok=True)
         model.save_pretrained(output_dir)
         self.tokenizer.save_pretrained(output_dir)

@@ -7,7 +7,7 @@ Uno de los pilares de este trabajo es la demostración de la viabilidad económi
 Para el despliegue del entorno de entrenamiento, se ha seleccionado Amazon Web Services (AWS) debido a su madurez en servicios de computación acelerada y su capacidad de ofrecer recursos de alto rendimiento bajo demanda.
 
 \subsubsection{Repositorio de Imágenes: Amazon ECR}
-Amazon Elastic Container Registry (ECR) actúa como el repositorio privado del proyecto. Se ha integrado en el flujo de CI/CD para almacenar las imágenes Docker del modelo Nexus-SLM, etiquetadas dinámicamente con el SHA del commit para garantizar la trazabilidad entre el código fuente y el binario desplegado.
+Amazon Elastic Container Registry (ECR) actúa como el repositorio privado del proyecto. Se ha integrado en el flujo de CI/CD para almacenar las imágenes Docker del modelo tfm-slm, etiquetadas dinámicamente con el SHA del commit para garantizar la trazabilidad entre el código fuente y el binario desplegado.
 
 \subsection{Selección del Hardware: Familia G6 y NVIDIA L4}
 La elección de la potencia de cómputo es el factor determinante en el tiempo de entrenamiento de un Small Language Model. AWS ofrece diversas familias de instancias optimizadas para computación acelerada, cada una con un hardware GPU específico diseñado para distintos casos de uso.
@@ -31,7 +31,7 @@ Como se detalla en la Tabla \ref{tab:aws_instances}, existen opciones que van de
 \end{table}
 
 \subsubsection{Arquitectura NVIDIA Ada Lovelace en G6}
-La instancia seleccionada, \texttt{g6.2xlarge}, cuenta con un acelerador \textbf{NVIDIA L4}. Esta GPU destaca por sus núcleos Tensor de cuarta generación y soporte nativo de \textit{bfloat16}. Las especificaciones detalladas del hardware se muestran en la Figura \ref{fig:aws_g6_specs}, documentando la capacidad de procesamiento del nodo utilizado para el entrenamiento del Nexus-SLM.
+La instancia seleccionada, \texttt{g6.2xlarge}, cuenta con un acelerador \textbf{NVIDIA L4}. Esta GPU destaca por sus núcleos Tensor de cuarta generación y soporte nativo de \textit{bfloat16}. Las especificaciones detalladas del hardware se muestran en la Figura \ref{fig:aws_g6_specs}, documentando la capacidad de procesamiento del nodo utilizado para el entrenamiento del tfm-slm.
 
 \begin{figure}[H]
     \centering
