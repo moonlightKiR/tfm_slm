@@ -2,10 +2,12 @@ import logging
 import os
 from pathlib import Path
 
+import boto3
 import torch
 import torch.nn as nn
 from app.config import settings
 from app.model.architecture import HybridConfig, HybridModel
+from botocore.exceptions import ClientError
 from datasets import load_from_disk
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -27,6 +29,8 @@ class TrainingService:
     def __init__(self, dataset_path: str = ".datasets/mixed_dataset"):
         self.dataset_path = Path(dataset_path)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.s3_client = boto3.client("s3")
+        self.bucket_name = settings.checkpoint_bucket
 
         # Reproducibility
         torch.manual_seed(42)
@@ -96,12 +100,39 @@ class TrainingService:
 
         logger.info("Initializing Hybrid Transformer-GRU Model...")
         model = HybridModel(config).to(self.device)
+        optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
+
+        # 4. Checkpoint Resuming
+        checkpoint_dir = Path("output")
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        checkpoint_path = checkpoint_dir / "checkpoint.pt"
+        start_epoch = 0
+
+        if checkpoint_path.exists():
+            logger.info(f"Checkpoint found at {checkpoint_path}. Resuming...")
+            checkpoint = torch.load(checkpoint_path, map_location=self.device)
+            model.load_state_dict(checkpoint["model_state_dict"])
+            optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+            start_epoch = checkpoint["epoch"] + 1
+            logger.info(f"Resuming from epoch {start_epoch}")
+        else:
+            # Try to download from S3 if not local
+            try:
+                logger.info(f"Checking S3 bucket {self.bucket_name} for checkpoints...")
+                self.s3_client.download_file(
+                    self.bucket_name, "checkpoint.pt", str(checkpoint_path)
+                )
+                logger.info("Checkpoint downloaded from S3. Resuming...")
+                checkpoint = torch.load(checkpoint_path, map_location=self.device)
+                model.load_state_dict(checkpoint["model_state_dict"])
+                optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+                start_epoch = checkpoint["epoch"] + 1
+            except ClientError:
+                logger.info("No checkpoint found in S3. Starting from scratch.")
 
         # L4 supports bfloat16, which is more stable than float16
         precision = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
         logger.info(f"Using mixed precision: {precision}")
-
-        optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
 
         # GradScaler is only needed for float16. bfloat16 doesn't need scaling.
         scaler = torch.amp.GradScaler("cuda", enabled=(precision == torch.float16))
@@ -111,7 +142,7 @@ class TrainingService:
         )
         model.train()
 
-        for epoch in range(epochs):
+        for epoch in range(start_epoch, epochs):
             epoch_loss = 0
             progress_bar = tqdm(dataloader, desc=f"Epoch {epoch+1}/{epochs}")
 
@@ -144,8 +175,29 @@ class TrainingService:
             avg_loss = epoch_loss / len(dataloader)
             logger.info(f"Epoch {epoch+1} completed. Average Loss: {avg_loss:.4f}")
 
-        # 5. Export
-        output_dir = Path("output/nexus_slm_v1")
+            # Save Checkpoint at the end of each epoch
+            torch.save(
+                {
+                    "epoch": epoch,
+                    "model_state_dict": model.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    "loss": avg_loss,
+                },
+                checkpoint_path,
+            )
+            logger.info(f"Checkpoint saved at {checkpoint_path}")
+
+            # Sync Checkpoint to S3
+            try:
+                self.s3_client.upload_file(
+                    str(checkpoint_path), self.bucket_name, "checkpoint.pt"
+                )
+                logger.info(f"Checkpoint synced to S3: s3://{self.bucket_name}/checkpoint.pt")
+            except ClientError as e:
+                logger.error(f"Failed to sync checkpoint to S3: {e}")
+
+        # 5. Export Final Model
+        output_dir = checkpoint_dir / "nexus_slm_v1"
         output_dir.mkdir(parents=True, exist_ok=True)
         model.save_pretrained(output_dir)
         self.tokenizer.save_pretrained(output_dir)

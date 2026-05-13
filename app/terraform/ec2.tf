@@ -55,6 +55,11 @@ resource "aws_iam_role_policy_attachment" "ecr_read" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
+resource "aws_iam_role_policy_attachment" "s3_full" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+}
+
 resource "aws_iam_instance_profile" "ec2_profile" {
   name = "${var.project_name}-ec2-profile"
   role = aws_iam_role.ec2_role.name
@@ -96,12 +101,16 @@ resource "aws_spot_instance_request" "training" {
               systemctl start docker
               systemctl enable docker
 
+              # Create output directory for persistence
+              mkdir -p /home/ec2-user/output
+              chmod 777 /home/ec2-user/output
+
               # Login to ECR
               aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${aws_ecr_repository.main.repository_url}
 
-              # Pull and run the image
+              # Pull and run the image with volume mounting for persistence
               docker pull ${aws_ecr_repository.main.repository_url}:${var.docker_image_tag}
-              docker run --gpus all ${aws_ecr_repository.main.repository_url}:${var.docker_image_tag}
+              docker run --gpus all -v /home/ec2-user/output:/app/output ${aws_ecr_repository.main.repository_url}:${var.docker_image_tag}
               EOF
 
   tags = {
