@@ -6,6 +6,8 @@ from datasets import Dataset, concatenate_datasets, load_dataset
 
 from .constants import DATASETS_CONFIG
 
+from transformers import AutoTokenizer
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -13,25 +15,26 @@ logger = logging.getLogger(__name__)
 
 class DatasetProcessor:
     """
-    Service responsible for mixing and harmonizing datasets.
+    Service responsible for mixing, harmonizing, and tokenizing datasets.
     """
 
     def __init__(self, output_dir: str = settings.datasets_dir):
         self.output_dir = Path(output_dir)
+        self.tokenizer = AutoTokenizer.from_pretrained("gpt2")
+        self.tokenizer.pad_token = self.tokenizer.eos_token
 
     def process(
         self, output_path: str = "mixed_dataset", total_samples: int = 100000
     ) -> Dataset | None:
         """
-        Mixes datasets and saves them if the output doesn't exist.
+        Mixes, tokenizes, and saves datasets if the output doesn't exist.
         """
         save_path = self.output_dir / output_path
 
         if save_path.exists():
             logger.info(
-                f"Mixed dataset already exists at {save_path}. Skipping processing."
+                f"Processed dataset already exists at {save_path}. Skipping."
             )
-            # Optionally load and return, but for a pipeline, skipping is usually enough
             return None
 
         weights = {
@@ -60,11 +63,29 @@ class DatasetProcessor:
         mixed_ds = concatenate_datasets(datasets_to_mix)
         mixed_ds = mixed_ds.shuffle(seed=42)
 
-        # Save to disk
-        mixed_ds.save_to_disk(str(save_path))
-        logger.info(f"Mixed dataset saved to {save_path}")
+        # Tokenization before saving
+        logger.info("Tokenizing the entire mixed dataset...")
 
-        return mixed_ds
+        def tokenize_function(examples):
+            return self.tokenizer(
+                examples["text"],
+                truncation=True,
+                padding="max_length",
+                max_length=1024,
+            )
+
+        tokenized_ds = mixed_ds.map(
+            tokenize_function,
+            batched=True,
+            remove_columns=["text"],
+            desc="Tokenizing",
+        )
+
+        # Save to disk
+        tokenized_ds.save_to_disk(str(save_path))
+        logger.info(f"Tokenized mixed dataset saved to {save_path}")
+
+        return tokenized_ds
 
     def _harmonize_dataset(self, ds: Dataset, key: str) -> Dataset:
         """
