@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     checkpoint_bucket: str = "tfm-slm-checkpoints"
 
     # Hardware configurations
-    gpu_vram_gb: int = 16
+    gpu_vram_gb: int = 48
 
 
 # Global instance

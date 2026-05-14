@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import AutoTokenizer
 
-# Optimizations for NVIDIA L4 (Ada Lovelace) on g6.xlarge
+# Optimizations for NVIDIA L40S (Ada Lovelace) on g6e.2xlarge
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 torch.set_float32_matmul_precision('high')  # Enables TF32 for faster matmuls
 
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class TrainingService:
     """
     Service responsible for the training loop of the SLM,
-    highly optimized for NVIDIA L4 (g6.xlarge).
+    highly optimized for NVIDIA L40S (g6e.2xlarge).
     """
 
     def __init__(self, dataset_path: str = ".datasets/mixed_dataset"):
@@ -45,46 +45,31 @@ class TrainingService:
     def train(
         self,
         epochs: int = 1,
-        batch_size: int = 32,
+        batch_size: int = 64,
         grad_accum_steps: int = 1,
         lr: float = 5e-5,
     ):
         """
         Trains the hybrid architecture from scratch.
-        Leverages bfloat16 and TF32 for NVIDIA L4 GPUs.
+        Leverages bfloat16, TF32, and torch.compile for performance on L40S.
         """
         if not self.dataset_path.exists():
             raise FileNotFoundError(
                 f"Dataset not found at {self.dataset_path}. Run processing first."
             )
 
-        # 1. Load and Tokenize
-        logger.info(f"Loading mixed dataset from {self.dataset_path}...")
-        dataset = load_from_disk(str(self.dataset_path))
-
-        def tokenize_function(examples):
-            return self.tokenizer(
-                examples["text"],
-                truncation=True,
-                padding="max_length",
-                max_length=1024,
-            )
-
-        tokenized_ds = dataset.map(
-            tokenize_function,
-            batched=True,
-            remove_columns=["text"],
-            desc="Tokenizing dataset",
-        )
+        # 1. Load Pre-tokenized Dataset
+        logger.info(f"Loading pre-tokenized dataset from {self.dataset_path}...")
+        tokenized_ds = load_from_disk(str(self.dataset_path))
         tokenized_ds.set_format("torch")
 
-        # 2. Optimized DataLoader for g6.xlarge (4 vCPUs)
+        # 2. Optimized DataLoader for g6e.2xlarge (8 vCPUs)
         dataloader = DataLoader(
             tokenized_ds,
             batch_size=batch_size,
             shuffle=True,
             pin_memory=True,
-            num_workers=4,  # Matches vCPUs of g6.xlarge
+            num_workers=8,  # Matches vCPUs of g6e.2xlarge
             prefetch_factor=2,
         )
 
@@ -100,6 +85,12 @@ class TrainingService:
 
         logger.info("Initializing Hybrid Transformer-GRU Model...")
         model = HybridModel(config).to(self.device)
+        
+        # Optimization: torch.compile fusion for Ada Lovelace (L40S)
+        # Note: This adds a delay at the start of the first epoch for compilation
+        logger.info("Compiling model with torch.compile for maximum throughput...")
+        model = torch.compile(model)
+        
         optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
 
         # 4. Checkpoint Resuming
@@ -130,7 +121,7 @@ class TrainingService:
             except ClientError:
                 logger.info("No checkpoint found in S3. Starting from scratch.")
 
-        # L4 supports bfloat16, which is more stable than float16
+        # L40S supports bfloat16
         precision = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
         logger.info(f"Using mixed precision: {precision}")
 

@@ -11,6 +11,7 @@ Esta guía contiene los comandos esenciales para gestionar la infraestructura, l
 - **Obtener la IP de la máquina**: `terraform output ec2_public_ip`
 - **Destruir todo (Ahorro de costes)**: `terraform destroy -auto-approve`
 - **Importar recurso existente**: `terraform import <direccion_recurso> <id_en_aws>`
+- **Desbloquear estado (Lock error)**: `terraform force-unlock <LOCK_ID>`
 
 ## 2. Conexión Remota (SSH)
 *Ejecutar desde la carpeta donde tengas el archivo `.pem`.*
@@ -37,7 +38,7 @@ Esta guía contiene los comandos esenciales para gestionar la infraestructura, l
 ## 5. Depuración de Arranque (Cloud-Init)
 *Si la máquina acaba de encenderse y `docker ps` no muestra nada.*
 
-- **Ver progreso de instalación inicial**: `sudo tail -f /var/log/cloud-init-output.log`
+- **Ver progreso de instalación inicial y descarga de imagen**: `sudo tail -f /var/log/cloud-init-output.log`
 
 ## 6. Gestión de Sesiones (Pausar y Reanudar)
 *Permite ahorrar costes deteniendo la GPU sin perder el progreso del entrenamiento.*
