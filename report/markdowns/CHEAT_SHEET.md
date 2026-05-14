@@ -38,3 +38,14 @@ Esta guía contiene los comandos esenciales para gestionar la infraestructura, l
 *Si la máquina acaba de encenderse y `docker ps` no muestra nada.*
 
 - **Ver progreso de instalación inicial**: `sudo tail -f /var/log/cloud-init-output.log`
+
+## 6. Gestión de Sesiones (Pausar y Reanudar)
+*Permite ahorrar costes deteniendo la GPU sin perder el progreso del entrenamiento.*
+
+- **Pausar Entrenamiento (Manteniendo Checkpoints en S3)**:
+  `terraform destroy -target=aws_spot_instance_request.training -auto-approve`
+  *(Esto destruye la máquina pero mantiene el bucket de S3 intacto).*
+
+- **Reanudar Entrenamiento**:
+  `terraform apply -auto-approve`
+  *(La nueva máquina detectará automáticamente el checkpoint en S3 y continuará desde la época actual).*

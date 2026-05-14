@@ -1,6 +1,6 @@
-# Nexus-SLM: Modelo de Lenguaje Pequeño con Arquitectura Híbrida Transformer-GRU
+# tfm-slm: Modelo de Lenguaje Pequeño con Arquitectura Híbrida Transformer-GRU
 
-Nexus-SLM es un modelo de lenguaje de escala reducida (Small Language Model) desarrollado en el marco de un Trabajo de Fin de Máster (TFM). El proyecto implementa una arquitectura híbrida personalizada que integra mecanismos de atención global (Transformers) con la eficiencia del refinamiento secuencial (GRU), optimizando el rendimiento para hardware NVIDIA de última generación y flujos de trabajo MLOps profesionales.
+tfm-slm es un modelo de lenguaje de escala reducida (Small Language Model) desarrollado en el marco de un Trabajo de Fin de Máster (TFM). El proyecto implementa una arquitectura híbrida personalizada que integra mecanismos de atención global (Transformers) con la eficiencia del refinamiento secuencial (GRU), optimizando el rendimiento para hardware NVIDIA de última generación y flujos de trabajo MLOps profesionales.
 
 ## Características Principales
 
@@ -12,7 +12,7 @@ Nexus-SLM es un modelo de lenguaje de escala reducida (Small Language Model) des
 
 ## Arquitectura del Modelo: HybridBlock
 
-A diferencia de las arquitecturas híbridas convencionales que se limitan a concatenar capas de distinto tipo, Nexus-SLM propone una integración profunda en cada nivel del modelo a través del componente HybridBlock. Cada uno de los 12 bloques del sistema ejecuta la siguiente secuencia de procesamiento:
+A diferencia de las arquitecturas híbridas convencionales que se limitan a concatenar capas de distinto tipo, tfm-slm propone una integración profunda en cada nivel del modelo a través del componente HybridBlock. Cada uno de los 12 bloques del sistema ejecuta la siguiente secuencia de procesamiento:
 
 1.  Normalización Previa (Pre-LayerNorm): Aplicada antes de cada sub-componente para garantizar la estabilidad numérica durante el entrenamiento de la arquitectura desde cero.
 2.  Auto-Atención Multi-Cabeza (MHA): Configurada con 12 cabezas de atención, se encarga de capturar dependencias globales y relaciones semánticas de largo alcance en secuencias de hasta 1024 tokens.
@@ -47,10 +47,10 @@ uv run tfm-slm
 ### Docker
 ```bash
 # Construcción de la imagen optimizada
-docker build -t nexus-slm:latest .
+docker build -t tfm-slm:latest .
 
 # Ejecución del contenedor con soporte de GPU
-docker run --rm --gpus all nexus-slm:latest
+docker run --rm --gpus all tfm-slm:latest
 ```
 
 ## Estructura del Proyecto
