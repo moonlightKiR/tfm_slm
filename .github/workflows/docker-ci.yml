@@ -24,4 +24,4 @@ jobs:
         push: false
         tags: tfm-slm:test
         cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-to: type=gha
