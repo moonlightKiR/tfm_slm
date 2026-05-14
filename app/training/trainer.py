@@ -85,12 +85,6 @@ class TrainingService:
 
         logger.info("Initializing Hybrid Transformer-GRU Model...")
         model = HybridModel(config).to(self.device)
-        
-        # Optimization: torch.compile fusion for Ada Lovelace (L40S)
-        # Note: This adds a delay at the start of the first epoch for compilation
-        logger.info("Compiling model with torch.compile for maximum throughput...")
-        model = torch.compile(model)
-        
         optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
 
         # 4. Checkpoint Resuming
@@ -102,7 +96,8 @@ class TrainingService:
         if checkpoint_path.exists():
             logger.info(f"Checkpoint found at {checkpoint_path}. Resuming...")
             checkpoint = torch.load(checkpoint_path, map_location=self.device)
-            model.load_state_dict(checkpoint["model_state_dict"])
+            # Use strict=False to handle the new causal_mask buffer which is missing in old checkpoints
+            model.load_state_dict(checkpoint["model_state_dict"], strict=False)
             optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
             start_epoch = checkpoint["epoch"] + 1
             logger.info(f"Resuming from epoch {start_epoch}")
@@ -115,11 +110,16 @@ class TrainingService:
                 )
                 logger.info("Checkpoint downloaded from S3. Resuming...")
                 checkpoint = torch.load(checkpoint_path, map_location=self.device)
-                model.load_state_dict(checkpoint["model_state_dict"])
+                model.load_state_dict(checkpoint["model_state_dict"], strict=False)
                 optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
                 start_epoch = checkpoint["epoch"] + 1
             except ClientError:
                 logger.info("No checkpoint found in S3. Starting from scratch.")
+
+        # Optimization: torch.compile fusion for Ada Lovelace (L40S)
+        # Note: We compile AFTER loading to avoid state_dict key mismatches (_orig_mod prefix)
+        logger.info("Compiling model with torch.compile for maximum throughput...")
+        model = torch.compile(model)
 
         # L40S supports bfloat16
         precision = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
@@ -167,10 +167,12 @@ class TrainingService:
             logger.info(f"Epoch {epoch+1} completed. Average Loss: {avg_loss:.4f}")
 
             # Save Checkpoint at the end of each epoch
+            # Use _orig_mod to save the raw state_dict (without torch.compile prefixes)
+            raw_model = model._orig_mod if hasattr(model, "_orig_mod") else model
             torch.save(
                 {
                     "epoch": epoch,
-                    "model_state_dict": model.state_dict(),
+                    "model_state_dict": raw_model.state_dict(),
                     "optimizer_state_dict": optimizer.state_dict(),
                     "loss": avg_loss,
                 },
