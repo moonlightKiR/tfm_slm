@@ -1,0 +1,107 @@
+\section{Diseño e Implementación de la Arquitectura Híbrida}
+\label{sec:arquitectura}
+
+Este capítulo detalla la aportación técnica central de este TFM: la integración de Transformers y GRU en un único modelo funcional, así como la estrategia de datos y fine-tuning que permite su entrenamiento eficiente y la comparativa con el estado del arte.
+
+\subsection{Estrategia de Curación y Mezcla de Datos (Data Mixing)}
+La calidad del entrenamiento de un Small Language Model (SLM) depende críticamente de la diversidad y representavitad de los datos. Se ha diseñado una estrategia de \textit{Data Mixing} para la fase de pre-entrenamiento y alineación general, reservando el conocimiento específico para una fase final.
+
+\subsubsection{Selección de Datasets de Propósito General}
+Se han seleccionado cinco pilares de datos abiertos para dotar al modelo de capacidades lingüísticas, de razonamiento y técnicas:
+\begin{itemize}
+    \item \textbf{OpenAssistant (OASST1):}\footnote{\url{https://huggingface.co/datasets/OpenAssistant/oasst1}} Fuente principal de naturalidad, proporcionando turnos de diálogo con matices humanos reales.
+    \item \textbf{ShareGPT:}\footnote{\url{https://huggingface.co/datasets/anon8231489123/ShareGPT_Vicuna_unfiltered}} Utilizado para transferir el estilo resolutivo y la estructura de respuesta de modelos avanzados.
+    \item \textbf{Alpaca:}\footnote{\url{https://huggingface.co/datasets/tatsu-lab/alpaca}} Aporta una base sólida de \textit{instruction-tuning} para tareas directas.
+    \item \textbf{UltraChat:}\footnote{\url{https://huggingface.co/datasets/stingning/ultrachat}} Fundamental para garantizar la consistencia en diálogos largos, poniendo a prueba la memoria de la arquitectura híbrida.
+    \item \textbf{The Stack (YAML):}\footnote{\url{https://huggingface.co/datasets/bigcode/the-stack}} Subconjunto del dataset \textit{The Stack} filtrado para archivos de configuración YAML, esencial para el conocimiento de infraestructura y sintaxis DevOps.
+\end{itemize}
+
+\subsubsection{Infraestructura de Datos: Formato Apache Arrow}
+Para garantizar un acceso eficiente a los datasets durante el entrenamiento, se ha optado por el uso de archivos en formato \textbf{Apache Arrow} (\texttt{.arrow}). Este estándar, que subyace a la librería \textit{datasets} de Hugging Face utilizada en el proyecto, ofrece ventajas tecnológicas clave para la viabilidad de los SLMs:
+
+\begin{itemize}
+    \item \textbf{Carga mediante Memory Mapping:} Los archivos \texttt{.arrow} permiten el acceso de tipo ``zero-copy'', mapeando los datos directamente del disco a la memoria RAM. Esto permite entrenar con volúmenes de datos que superan la memoria física disponible, algo crítico en el uso de instancias con recursos limitados.
+    \item \textbf{Almacenamiento Columnar:} A diferencia de formatos tradicionales como JSON o CSV, Arrow organiza la información por columnas. Esto optimiza el procesamiento de secuencias de texto al permitir lecturas parciales y una serialización extremadamente rápida.
+    \item \textbf{Consistencia Estructural:} El uso de este formato garantiza que los campos \textit{instruction}, \textit{input} y \textit{output} mantengan una tipificación estricta, facilitando la integración directa con los modelos de datos de Pydantic definidos en la aplicación.
+\end{itemize}
+
+\subsubsection{Inyección de Conocimiento de Dominio (Fase Final)}
+Una vez que el modelo ha adquirido capacidades lingüísticas generales, se procede a dotarlo de conocimiento especializado mediante el dataset sintético de Zurich. Esta fase se aborda desde dos metodologías para su posterior comparativa:
+\begin{itemize}
+    \item \textbf{Fine-tuning con LoRA (Low-Rank Adaptation):} Entrenamiento eficiente de una pequeña fracción de los parámetros del modelo para integrar el conocimiento directamente en los pesos de la red.
+    \item \textbf{Retrieval-Augmented Generation (RAG):} Implementación de una arquitectura de consulta externa que proporciona contexto en tiempo real sin modificar los pesos del modelo.
+\end{itemize}
+
+\subsubsection{Distribución del Dataset de Pre-entrenamiento}
+Para optimizar el rendimiento bajo restricciones de recursos, se ha definido la siguiente distribución de pesos para la fase inicial:
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|X|X|c|X|}
+\hline
+\textbf{Categoría} & \textbf{Dataset} & \textbf{Peso} & \textbf{Propósito} \\ \hline
+Conversacional & OpenAssistant / UltraChat & 50\% & Tono humano y consistencia en diálogos largos \\ \hline
+Instrucciones & Alpaca & 50\% & Seguimiento de instrucciones y estructura resolutiva \\ \hline
+\end{tabularx}
+\caption{Estrategia de mezcla de datos para el entrenamiento base del SLM (Fase Inicial).}
+\end{table}
+
+\subsection{Arquitectura del Modelo: Hybrid Transformer-GRU}
+La innovación técnica central de este modelo, denominado \texttt{tfm-slm}, radica en su arquitectura de bloques híbridos integrados. A diferencia de enfoques que simplemente concatenan capas, cada uno de los 12 bloques del modelo fusiona capacidades globales y secuenciales.
+
+\subsubsection{El Bloque Híbrido (HybridBlock)}
+Cada capa del modelo está compuesta por tres sub-componentes principales protegidos por conexiones residuales y normalización previa (\textit{Pre-LayerNorm}):
+\begin{enumerate}
+    \item \textbf{Multi-Head Attention (MHA):} Encargada de capturar dependencias globales y relaciones semánticas a larga distancia. Configurada con 12 cabezas de atención para un \textit{hidden size} de 768.
+    \item \textbf{Gated Recurrent Unit (GRU):} Situada inmediatamente después de la atención, actúa como un filtro de refinamiento secuencial. Esta capa permite al modelo mantener un estado interno más eficiente para patrones locales y estructurales, reduciendo la carga cognitiva del mecanismo de atención.
+    \item \textbf{Feed-Forward Network (MLP):} Una red de dos capas lineales con activación GELU y un factor de expansión de 4 ($3072$ neuronas), encargada del refinamiento de características de alto nivel.
+\end{enumerate}
+
+\subsubsection{Especificaciones Técnicas y Parámetros}
+El modelo se ha dimensionado para ser competitivo en el rango de los Small Language Models, optimizando el ancho de banda de la arquitectura para hardware de 24 GB de VRAM. A continuación se detallan las especificaciones y una comparativa directa con el modelo de referencia en la industria, SmolLM2-135M.
+
+\paragraph{Justificación del Tokenizer:} Para esta arquitectura se ha seleccionado el tokenizer de \textbf{GPT-2} (50,257 tokens). Esta elección es estratégica por tres motivos:
+\begin{enumerate}
+    \item \textbf{Eficiencia de Parámetros:} Al mantener un vocabulario moderado, se minimiza el \textit{overhead} de memoria en la capa de \textit{embeddings} (38M de parámetros), permitiendo dedicar una mayor fracción de la capacidad computacional a los bloques híbridos Transformer-GRU.
+    \item \textbf{Robustez Byte-level BPE:} El uso de codificación por pares de bytes (\textit{Byte-Pair Encoding}) garantiza que el modelo pueda procesar cualquier secuencia de caracteres sin generar tokens desconocidos (\textit{out-of-vocabulary}), algo crítico en la mezcla de datos técnicos y YAML.
+    \item \textbf{Estandarización:} Facilita la comparabilidad directa con otros modelos de la literatura técnica, asegurando que las métricas de rendimiento dependan de la arquitectura y no de variaciones en la tokenización.
+\end{enumerate}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|X|c|c|}
+\hline
+\textbf{Especificación} & \textbf{SmolLM2-135M} & \textbf{tfm-slm (Propuesto)} \\ \hline
+Arquitectura & Pure Transformer (Llama) & Hybrid Transformer-GRU \\ \hline
+Parámetros Totales & ~135M & \textbf{~167M} \\ \hline
+Capas (Blocks) & 30 & 12 \\ \hline
+Hidden Size ($d_{model}$) & 576 & 768 \\ \hline
+MLP Intermediate Size & 1536 & 3072 \\ \hline
+Atención & GQA (9/3 heads) & MHA (12 heads) \\ \hline
+Escalado de Memoria & Cuadrático $O(L^2)$ & \textbf{Híbrido (Linear-assisted)} \\ \hline
+\end{tabularx}
+\caption{Comparativa arquitectónica: tfm-slm vs. SmolLM2-135M.}
+\label{tab:comparativa_smollm}
+\end{table}
+
+\begin{itemize}
+    \item \textbf{Capas:} 12 bloques híbridos. Aunque posee menos capas que SmolLM2, la densidad de información por bloque es superior gracias al componente GRU.
+    \item \textbf{Dimensión del Modelo ($d_{model}$):} 768.
+    \item \textbf{Contexto Máximo:} 1024 tokens.
+    \item \textbf{Vocabulario:} 50,257 tokens (GPT-2 Tokenizer).
+    \item \textbf{Weight Tying:} Se ha implementado el amarre de pesos entre la capa de \textit{embeddings} y la cabeza de salida (\textit{LM Head}), reduciendo el uso de memoria en un 18\%.
+\end{itemize}
+
+\subsection{Optimización y Estabilidad del Entrenamiento}
+Para garantizar que la arquitectura híbrida sea entrenable desde cero de forma estable, se han aplicado técnicas de inicialización y normalización avanzadas. Todos los pesos lineales se inicializan mediante una distribución normal con $\sigma = 0.02$, mientras que las capas de normalización comienzan con ganancia unidad y sesgo cero. El uso de \textit{causal masking} en cada bloque asegura que la parte de atención no rompa la naturaleza autorregresiva necesaria para la generación de lenguaje, demostrando la eficiencia de la arquitectura híbrida en entornos de recursos limitados.
+
+\subsection{Expectativas de Convergencia y Métricas de Éxito}
+Para validar la viabilidad del entrenamiento se han definido métricas de éxito basadas en la literatura de los SLM y los resultados preliminares observados. La confianza en la funcionalidad final del modelo se sustenta en tres pilares:
+
+\begin{enumerate}
+    \item \textbf{Calidad del Curado de Datos (Data Mix):} A diferencia del pre-entrenamiento masivo con datos web no filtrados, el uso de datasets de \textit{instruction-tuning} como Alpaca y ShareGPT garantiza que el modelo aprenda a seguir instrucciones desde las fases iniciales. La inclusión de OpenAssistant aporta la naturalidad conversacional necesaria para un agente funcional.
+    \item \textbf{Leyes de Escala (Scaling Laws):} Con ~167M de parámetros, el modelo se sitúa en un rango superior al GPT-2 Small (124M), el cual ya demostró capacidades emergentes de razonamiento gramatical. Los 43M de parámetros adicionales dedicados al componente GRU actúan como una reserva de memoria dedicada a la consistencia secuencial.
+    \item \textbf{Convergencia Observada:} El descenso de la función de pérdida (\textit{loss}) hasta un valor de 1.72 en la primera época es un indicador sólido de estabilidad. Se estima que una programación de 5 épocas es suficiente para transicionar desde el aprendizaje de estructuras gramaticales básicas (Época 1) hacia la asociación de conceptos semánticos y el refinamiento del estilo de respuesta (Época 5).
+\end{enumerate}
+
+Se define como éxito un modelo que demuestre coherencia sintáctica, adherencia al formato de diálogo \textit{User/Assistant} y capacidad de recuperación de información básica sin degradación de la latencia en contextos largos, validando así la eficiencia de la arquitectura híbrida frente a los modelos de solo atención.

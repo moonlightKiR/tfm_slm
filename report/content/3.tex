@@ -1,0 +1,22 @@
+\section{Fundamentos Teóricos}
+\label{sec:fundamentos}
+
+En este capítulo se analizan las tecnologías base que componen la propuesta híbrida y se justifica la elección de un diseño mixto frente a los estándares de la industria.
+
+\subsection{Transformers y el Mecanismo de Atención}
+El impacto del mecanismo de \textit{self-attention} en el procesamiento del lenguaje radica en su capacidad para capturar relaciones globales y dependencias a larga distancia sin las limitaciones de gradiente de las redes recurrentes tradicionales. No obstante, esta arquitectura presenta un coste computacional cuadrático $O(L^2)$ respecto a la longitud de la secuencia $L$, lo que limita su escalabilidad en dispositivos con recursos restringidos.
+
+\subsection{Gated Recurrent Units (GRU): El Retorno de la Recurrencia}
+Las \textit{Gated Recurrent Units} (GRU) ofrecen un manejo eficiente de secuencias mediante un estado oculto de tamaño fijo. A diferencia de las redes recurrentes básicas, las puertas de actualización y reinicio permiten mantener una memoria selectiva con un coste computacional lineal $O(L)$. En la era de los SLM, el GRU resurge no como un sustituto, sino como un complemento para comprimir la información secuencial de forma eficiente.
+
+\subsection{La Hipótesis Híbrida: ¿Por qué combinar ambas?}
+La motivación central de este trabajo es la superación del paradigma de "atención pura" (utilizado en modelos como SmolLM2). La arquitectura híbrida propuesta se fundamenta en tres pilares de superioridad teórica para modelos de escala reducida:
+
+\begin{enumerate}
+    \item \textbf{Eficiencia de Memoria (Compressed State):} Mientras que un Transformer puro debe almacenar todas las llaves y valores (KV Cache) de la secuencia, aumentando el consumo de VRAM de forma cuadrática, el componente GRU actúa como un "compresor de contexto", manteniendo un estado interno rico en información con un consumo de memoria constante.
+    \item \textbf{Refinamiento Secuencial Local:} La atención es excelente para relaciones globales, pero a menudo ignora la estructura secuencial inmediata. El GRU aporta un filtro de refinamiento local que permite al modelo entender mejor la sintaxis y el orden de las palabras antes de procesar la semántica global.
+    \item \textbf{Inferencia de Tiempo Lineal:} En secuencias extremadamente largas, la parte recurrente del bloque híbrido permite mantener una latencia de respuesta más estable, mitigando el cuello de botella del mecanismo de atención convencional.
+\end{enumerate}
+
+\subsection{Retrieval-Augmented Generation (RAG)}
+Complementando la arquitectura, el sistema RAG permite mitigar las limitaciones de conocimiento estático de los SLM, proporcionando una base de datos externa que reduce alucinaciones sin aumentar el tamaño de los parámetros del modelo.

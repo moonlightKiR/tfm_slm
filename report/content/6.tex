@@ -1,0 +1,47 @@
+\section{MLOps: Despliegue y Puesta en Producción}
+\label{sec:mlops}
+
+El ciclo de vida del modelo culmina con su despliegue en un entorno de producción real, sustentado por una arquitectura de software robusta y procesos de gobernanza de código altamente automatizados.
+
+\subsection{Arquitectura de Servicios e Idempotencia}
+La pipeline de datos se ha diseñado siguiendo los principios \textbf{SOLID}, transformando scripts procedimentales en servicios especializados y desacoplados como \texttt{DatasetDownloader} y \texttt{DatasetProcessor}. Un pilar fundamental es la \textbf{idempotencia}: cada servicio verifica el estado del sistema antes de ejecutar operaciones costosas, optimizando el uso de recursos en la nube.
+
+\subsection{Reproducibilidad y Gestión de Dependencias}
+Para garantizar que el modelo se ejecute en entornos idénticos (local, AWS, Kubernetes), se utiliza el gestor \textbf{uv} y su archivo de bloqueo \textbf{\texttt{uv.lock}}. Esto asegura el determinismo absoluto del entorno, optimiza la caché de Docker y proporciona seguridad mediante la verificación de \textit{hashes} criptográficos.
+
+\subsection{Optimización del Pipeline de CI: Eficiencia y Velocidad}
+El flujo de integración continua en GitHub Actions se ha optimizado bajo dos vertientes: el tiempo de ejecución y el coste computacional.
+
+\subsubsection{Estrategia de Caché Global con Fallback}
+Dada la naturaleza pesada de las dependencias de Deep Learning, el sistema utiliza una caché compartida. GitHub Actions implementa una jerarquía donde el \textit{runner} busca primero en la rama actual y luego realiza un \textit{fallback} automático a \texttt{main}. Esto reduce el tiempo de build de 15 minutos a menos de 60 segundos.
+
+\subsubsection{Validación Basada en Revisión (PR-driven CI)}
+Se ha implementado una política de ejecución dirigida por \textbf{Pull Requests}. El pipeline de Docker solo se dispara cuando el código está listo para revisión, minimizando el consumo innecesario de recursos durante el desarrollo activo.
+
+\subsection{Integridad del Código y Gobernanza mediante Rulesets}
+Para asegurar la estabilidad de la rama principal (\texttt{main}), se ha configurado un \textbf{GitHub Repository Ruleset} que impone los siguientes controles de calidad:
+\begin{itemize}
+    \item \textbf{Fusión exclusiva vía PR:} Se prohíben los cambios directos en la rama principal, obligando a un proceso de revisión formal.
+    \item \textbf{Status Checks Obligatorios:} El pipeline de construcción de Docker (\texttt{Docker Image CI}) debe finalizar con éxito antes de permitir cualquier integración.
+    \item \textbf{Revisión Asistida por IA:} Se ha integrado \textbf{GitHub Copilot Code Review} de forma automática en el ruleset. Esto garantiza que cada cambio sea analizado por modelos de lenguaje avanzados para detectar vulnerabilidades, errores lógicos y asegurar el cumplimiento de las mejores prácticas antes de la intervención humana.
+\end{itemize}
+
+\subsection{Pruebas Automatizadas y Calidad de Código}
+La fiabilidad se garantiza mediante una suite de pruebas con \texttt{pytest}, utilizando técnicas de \textit{mocking} para evitar dependencias externas. Estas pruebas se integran mediante \textit{hooks} de \textit{pre-commit}, manteniendo una cobertura superior al 95\%.
+
+Para asegurar la correcta monitorización del despliegue en producción, se han establecido protocolos de depuración en tiempo real. Debido a que el proceso de descarga e inicialización del contenedor de Deep Learning puede demorar entre 3 y 6 minutos debido al volumen de las imágenes, se utiliza el sistema \texttt{cloud-init} para seguir el progreso del aprovisionamiento:
+
+\begin{lstlisting}[language=bash, caption={Comando para monitorizar el aprovisionamiento inicial.}]
+sudo tail -f /var/log/cloud-init-output.log
+\end{lstlisting}
+
+Una vez que el contenedor está activo, la trazabilidad del entrenamiento se mantiene mediante el acceso a los flujos de salida estándar de Docker, permitiendo una validación inmediata de la carga del modelo y la conexión con el sistema de persistencia en S3.
+
+\subsection{Orquestación con Kubernetes}
+Configuración del clúster de K8s para servir el modelo híbrido de forma escalable.
+
+\subsection{GitOps con ArgoCD}
+Implementation del flujo de despliegue continuo, permitiendo que cualquier cambio en la configuración se refleje automáticamente en el clúster.
+
+\subsection{Integración del Sistema RAG}
+Despliegue de la infraestructura de base de datos vectorial y su conexión con el modelo para la inferencia aumentada.
