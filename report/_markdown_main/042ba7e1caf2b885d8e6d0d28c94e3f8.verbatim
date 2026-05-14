@@ -1,3 +1,0 @@
-aws s3api put-bucket-versioning \
-    --bucket tfm-slm-terraform-state \
-    --versioning-configuration Status=Enabled
