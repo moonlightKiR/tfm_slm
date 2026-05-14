@@ -105,6 +105,11 @@ class HybridModel(PreTrainedModel):
         if config.tie_word_embeddings:
             self.lm_head.weight = self.embeddings.weight
 
+        # Pre-compute and register causal mask as a buffer
+        # This prevents recreating it and moving it from CPU to GPU every forward pass
+        mask = torch.triu(torch.ones(config.max_position_embeddings, config.max_position_embeddings), diagonal=1).bool()
+        self.register_buffer("causal_mask", mask)
+
         self.post_init()
 
     def _init_weights(self, module):
@@ -127,8 +132,8 @@ class HybridModel(PreTrainedModel):
         x = self.embeddings(input_ids) + self.pos_embeddings(positions)
         x = self.dropout(x)
 
-        # Causal Mask
-        mask = nn.Transformer.generate_square_subsequent_mask(seq_length).to(device)
+        # Use the pre-computed mask, sliced to current sequence length
+        mask = self.causal_mask[:seq_length, :seq_length]
 
         # Hybrid blocks
         for block in self.blocks:

@@ -28,8 +28,8 @@ def main():
     # 3. Training Service (Hybrid Model)
     logger.info("Phase 3: Training Hybrid Transformer-GRU Model from scratch...")
     trainer = TrainingService()
-    # Stress test: Physical batch size = 16, Accumulation = 2 => Effective batch size = 32
-    trainer.train(epochs=5, batch_size=16, grad_accum_steps=2)
+    # Optimized for G6e (L40S - 48GB): Physical batch size = 32, Accumulation = 2 => Effective batch size = 64
+    trainer.train(epochs=5, batch_size=32, grad_accum_steps=2)
 
     logger.info("Pipeline execution finished successfully.")
 

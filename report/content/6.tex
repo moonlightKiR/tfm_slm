@@ -29,11 +29,19 @@ Para asegurar la estabilidad de la rama principal (\texttt{main}), se ha configu
 \subsection{Pruebas Automatizadas y Calidad de Código}
 La fiabilidad se garantiza mediante una suite de pruebas con \texttt{pytest}, utilizando técnicas de \textit{mocking} para evitar dependencias externas. Estas pruebas se integran mediante \textit{hooks} de \textit{pre-commit}, manteniendo una cobertura superior al 95\%.
 
+Para asegurar la correcta monitorización del despliegue en producción, se han establecido protocolos de depuración en tiempo real. Debido a que el proceso de descarga e inicialización del contenedor de Deep Learning puede demorar entre 3 y 6 minutos debido al volumen de las imágenes, se utiliza el sistema \texttt{cloud-init} para seguir el progreso del aprovisionamiento:
+
+\begin{lstlisting}[language=bash, caption={Comando para monitorizar el aprovisionamiento inicial.}]
+sudo tail -f /var/log/cloud-init-output.log
+\end{lstlisting}
+
+Una vez que el contenedor está activo, la trazabilidad del entrenamiento se mantiene mediante el acceso a los flujos de salida estándar de Docker, permitiendo una validación inmediata de la carga del modelo y la conexión con el sistema de persistencia en S3.
+
 \subsection{Orquestación con Kubernetes}
 Configuración del clúster de K8s para servir el modelo híbrido de forma escalable.
 
 \subsection{GitOps con ArgoCD}
-Implementación del flujo de despliegue continuo, permitiendo que cualquier cambio en la configuración se refleje automáticamente en el clúster.
+Implementation del flujo de despliegue continuo, permitiendo que cualquier cambio en la configuración se refleje automáticamente en el clúster.
 
 \subsection{Integración del Sistema RAG}
 Despliegue de la infraestructura de base de datos vectorial y su conexión con el modelo para la inferencia aumentada.
