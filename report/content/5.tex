@@ -78,5 +78,19 @@ Se utiliza la técnica de acumulación para simular lotes grandes sin saturar la
     \label{tab:training_configs}
 \end{table}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{images/training/nvidia-smi-training_conservative.png}
+    \caption{Monitorización de la GPU NVIDIA L4 bajo la configuración conservadora (Batch 4, Acumulación 8).}
+    \label{fig:training_conservative}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{images/training/nvidia-smi-training_optimized.png}
+    \caption{Monitorización de la GPU NVIDIA L4 bajo la configuración optimizada (Batch 16, Acumulación 2).}
+    \label{fig:training_optimized}
+\end{figure}
+
 \subsection{Evaluación de Rendimiento vs Coste}
 Presentación de gráficas y métricas que comparan el tiempo de ejecución con el gasto económico real, demostrando la eficiencia de la arquitectura híbrida en entornos de recursos limitados.
