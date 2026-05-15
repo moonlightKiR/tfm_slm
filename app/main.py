@@ -1,6 +1,6 @@
 import logging
 
-from app.chat import run_chat
+from app.chat import ChatService
 from app.dataset.downloader import DatasetDownloader
 from app.dataset.processor import DatasetProcessor
 from app.training.trainer import TrainingService
@@ -36,7 +36,8 @@ def main():
 
     # 4. Interactive Chat Session
     logger.info("Starting interactive chat session...")
-    run_chat()
+    chat_service = ChatService()
+    chat_service.run()
 
 
 if __name__ == "__main__":
