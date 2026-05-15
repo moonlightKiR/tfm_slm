@@ -50,8 +50,8 @@ jobs:
         tags: |
           ${{ steps.login-ecr.outputs.registry }}/tfm-slm:${{ github.sha }}
           ${{ steps.login-ecr.outputs.registry }}/tfm-slm:latest
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-from: type=gha,scope=tfm-slm-cache
+        cache-to: type=gha,scope=tfm-slm-cache
 
     - name: Terraform Apply (Complete)
       run: terraform apply -auto-approve -var="docker_image_tag=${{ github.sha }}"
