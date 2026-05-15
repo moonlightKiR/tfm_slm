@@ -16,6 +16,13 @@ RUN uv sync --frozen --no-install-project --no-dev
 # Stage 2: Runtime environment
 FROM python:3.13-slim
 
+# Install system dependencies for torch.compile (Triton)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy uv binaries
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
