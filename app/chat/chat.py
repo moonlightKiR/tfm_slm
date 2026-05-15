@@ -1,19 +1,40 @@
-import torch
-from app.model.architecture import HybridModel, HybridConfig
-from transformers import AutoTokenizer
+import logging
 from pathlib import Path
+
+import boto3
+import torch
+from app.config import settings
+from app.model.architecture import HybridConfig, HybridModel
+from botocore.exceptions import ClientError
+from transformers import AutoTokenizer
+
+logger = logging.getLogger(__name__)
+
 
 def run_chat():
     """
     Interactive chat session to test the tfm-slm model from a checkpoint.
+    Downloads checkpoint from S3 if not found locally.
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     checkpoint_path = Path("output/checkpoint.pt")
 
+    # Download from S3 if checkpoint not local
     if not checkpoint_path.exists():
-        print(f"Error: No se encuentra el archivo {checkpoint_path}")
-        print("Asegúrate de que el entrenamiento ha generado al menos un checkpoint.")
-        return
+        checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+        s3_client = boto3.client("s3")
+        try:
+            print(f"Checkpoint not found locally. Downloading from S3 ({settings.checkpoint_bucket})...")
+            s3_client.download_file(
+                settings.checkpoint_bucket,
+                "checkpoint.pt",
+                str(checkpoint_path)
+            )
+            print(f"✅ Checkpoint downloaded from S3")
+        except ClientError as e:
+            print(f"Error: No checkpoint found locally or in S3")
+            print(f"Details: {e}")
+            return
 
     # 1. Cargar Tokenizer
     print("Cargando tokenizer (GPT-2)...")
@@ -49,7 +70,7 @@ def run_chat():
 
         # Formateo básico para ayudar al modelo (Estilo Alpaca/Chat)
         prompt = f"User: {user_query}\nAssistant:"
-        
+
         # Tokenización
         inputs = tokenizer(prompt, return_tensors="pt").to(device)
         input_length = inputs["input_ids"].shape[1]
@@ -65,11 +86,8 @@ def run_chat():
 
         # Decodificar solo la respuesta nueva
         response = tokenizer.decode(output_ids[0][input_length:], skip_special_tokens=True)
-        
+
         # Limpieza básica para que no siga repitiendo "User:" en el output
         response = response.split("User:")[0].strip()
 
         print(f"tfm-slm: {response}")
-
-if __name__ == "__main__":
-    run_chat()
