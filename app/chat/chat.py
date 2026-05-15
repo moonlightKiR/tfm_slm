@@ -25,7 +25,7 @@ class ChatService:
 
         self.model: HybridModel | None = None
         self.tokenizer: PreTrainedTokenizer | None = None
-        self.checkpoint: dict | None = None
+        self.checkpoint: dict[str, object] | None = None
 
     def _ensure_checkpoint_local(self) -> bool:
         """
@@ -38,9 +38,8 @@ class ChatService:
         self.checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
 
         try:
-            print(
-                f"Checkpoint not found locally. Downloading from S3 ({self.bucket_name})..."
-            )
+            print("Checkpoint not found locally. Downloading from S3...")
+            print(f"  Bucket: {self.bucket_name}")
             self.s3_client.download_file(
                 self.bucket_name,
                 "checkpoint.pt",
@@ -55,11 +54,14 @@ class ChatService:
     def _load_tokenizer(self) -> None:
         """Loads and configures GPT-2 tokenizer for model inference."""
         print("Cargando tokenizer (GPT-2)...")
-        self.tokenizer = AutoTokenizer.from_pretrained("gpt2")
-        self.tokenizer.pad_token = self.tokenizer.eos_token
+        tokenizer = AutoTokenizer.from_pretrained("gpt2")
+        tokenizer.pad_token = tokenizer.eos_token  # type: ignore
+        self.tokenizer = tokenizer  # type: ignore
 
     def _load_model(self) -> None:
         """Loads HybridModel and checkpoint weights from disk."""
+        assert self.tokenizer is not None
+
         print(f"Cargando pesos desde {self.checkpoint_path}...")
 
         config = HybridConfig(
@@ -71,11 +73,14 @@ class ChatService:
             intermediate_size=3072,
         )
 
-        self.model = HybridModel(config)
-        self.checkpoint = torch.load(self.checkpoint_path, map_location="cpu")
-        self.model.load_state_dict(self.checkpoint["model_state_dict"])
-        self.model.to(self.device)
-        self.model.eval()
+        model = HybridModel(config)
+        checkpoint = torch.load(self.checkpoint_path, map_location="cpu")
+        model.load_state_dict(checkpoint["model_state_dict"])
+        model.to(self.device)
+        model.eval()
+
+        self.model = model
+        self.checkpoint = checkpoint
 
     def _generate_response(
         self,
@@ -85,6 +90,9 @@ class ChatService:
         top_k: int = 50,
     ) -> str:
         """Generates model response for given prompt."""
+        assert self.tokenizer is not None
+        assert self.model is not None
+
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
         input_length = inputs["input_ids"].shape[1]
 
@@ -99,7 +107,8 @@ class ChatService:
         response = self.tokenizer.decode(
             output_ids[0][input_length:], skip_special_tokens=True
         )
-        return response.split("User:")[0].strip()
+        response_str = response if isinstance(response, str) else ""
+        return response_str.split("User:")[0].strip()
 
     def _run_chat_loop(self) -> None:
         """Manages interactive chat session with model."""
@@ -125,6 +134,7 @@ class ChatService:
         self._load_tokenizer()
         self._load_model()
 
+        assert self.checkpoint is not None
         epoch = self.checkpoint.get("epoch", "unknown")
         print(f"\n✅ Modelo cargado (Epoca: {epoch})")
 

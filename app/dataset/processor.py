@@ -3,10 +3,9 @@ from pathlib import Path
 
 from app.config import settings
 from datasets import Dataset, concatenate_datasets, load_dataset
+from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from .constants import DATASETS_CONFIG
-
-from transformers import AutoTokenizer
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -20,8 +19,8 @@ class DatasetProcessor:
 
     def __init__(self, output_dir: str = settings.datasets_dir):
         self.output_dir = Path(output_dir)
-        self.tokenizer = AutoTokenizer.from_pretrained("gpt2")
-        self.tokenizer.pad_token = self.tokenizer.eos_token
+        self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained("gpt2")
+        self.tokenizer.pad_token = self.tokenizer.eos_token  # type: ignore
 
     def process(
         self, output_path: str = "mixed_dataset", total_samples: int = 100000
@@ -32,9 +31,7 @@ class DatasetProcessor:
         save_path = self.output_dir / output_path
 
         if save_path.exists():
-            logger.info(
-                f"Processed dataset already exists at {save_path}. Skipping."
-            )
+            logger.info(f"Processed dataset already exists at {save_path}. Skipping.")
             return None
 
         weights = {

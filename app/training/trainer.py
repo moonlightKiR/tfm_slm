@@ -4,18 +4,17 @@ from pathlib import Path
 
 import boto3
 import torch
-import torch.nn as nn
 from app.config import settings
 from app.model.architecture import HybridConfig, HybridModel
 from botocore.exceptions import ClientError
 from datasets import load_from_disk
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, PreTrainedTokenizer
 
 # Optimizations for NVIDIA L40S (Ada Lovelace) on g6e.2xlarge
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
-torch.set_float32_matmul_precision('high')  # Enables TF32 for faster matmuls
+torch.set_float32_matmul_precision("high")  # Enables TF32 for faster matmuls
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +38,8 @@ class TrainingService:
 
         logger.info(f"Using device: {self.device}")
 
-        self.tokenizer = AutoTokenizer.from_pretrained("gpt2")
-        self.tokenizer.pad_token = self.tokenizer.eos_token
+        self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained("gpt2")
+        self.tokenizer.pad_token = self.tokenizer.eos_token  # type: ignore
 
     def train(
         self,
@@ -128,14 +127,13 @@ class TrainingService:
         # GradScaler is only needed for float16. bfloat16 doesn't need scaling.
         scaler = torch.amp.GradScaler("cuda", enabled=(precision == torch.float16))
 
-        logger.info(
-            f"Training started. Batch size: {batch_size}, Grad Accum: {grad_accum_steps}"
-        )
+        msg = f"Training started. Batch: {batch_size}, Accum: {grad_accum_steps}"
+        logger.info(msg)
         model.train()
 
         for epoch in range(start_epoch, epochs):
             epoch_loss = 0
-            progress_bar = tqdm(dataloader, desc=f"Epoch {epoch+1}/{epochs}")
+            progress_bar = tqdm(dataloader, desc=f"Epoch {epoch + 1}/{epochs}")
 
             for i, batch in enumerate(progress_bar):
                 input_ids = batch["input_ids"].to(self.device, non_blocking=True)
@@ -164,7 +162,7 @@ class TrainingService:
                 )
 
             avg_loss = epoch_loss / len(dataloader)
-            logger.info(f"Epoch {epoch+1} completed. Average Loss: {avg_loss:.4f}")
+            logger.info(f"Epoch {epoch + 1} completed. Average Loss: {avg_loss:.4f}")
 
             # Save Checkpoint at the end of each epoch
             # Use _orig_mod to save the raw state_dict (without torch.compile prefixes)
@@ -185,7 +183,9 @@ class TrainingService:
                 self.s3_client.upload_file(
                     str(checkpoint_path), self.bucket_name, "checkpoint.pt"
                 )
-                logger.info(f"Checkpoint synced to S3: s3://{self.bucket_name}/checkpoint.pt")
+                logger.info(
+                    f"Checkpoint synced to S3: s3://{self.bucket_name}/checkpoint.pt"
+                )
             except ClientError as e:
                 logger.error(f"Failed to sync checkpoint to S3: {e}")
 
