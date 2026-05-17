@@ -189,9 +189,8 @@ class TrainingService:
             except ClientError as e:
                 logger.error(f"Failed to sync checkpoint to S3: {e}")
 
-        # 5. Export Final Model
+        # 5. Save Tokenizer
         output_dir = checkpoint_dir / "tfm_slm_v1"
         output_dir.mkdir(parents=True, exist_ok=True)
-        model.save_pretrained(output_dir)
         self.tokenizer.save_pretrained(output_dir)
-        logger.info(f"Final model saved in: {output_dir}")
+        logger.info(f"Tokenizer saved in: {output_dir}")
