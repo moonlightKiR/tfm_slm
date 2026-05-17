@@ -246,3 +246,6 @@ GEMINI.md
 *.tfstate
 *.tfstate.*
 *.pem
+
+# Pytest
+output/checkpoint.pt

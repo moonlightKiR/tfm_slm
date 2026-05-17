@@ -4,13 +4,15 @@ from unittest.mock import MagicMock, patch
 from app.main import main
 
 
-@patch("app.main.TrainingService")
-@patch("app.main.DatasetProcessor")
-@patch("app.main.DatasetDownloader")
+@patch("app.chat.ChatService")
+@patch("app.training.trainer.TrainingService")
+@patch("app.dataset.processor.DatasetProcessor")
+@patch("app.dataset.downloader.DatasetDownloader")
 def test_main_calls_services(
     mock_downloader_cls: MagicMock,
     mock_processor_cls: MagicMock,
     mock_trainer_cls: MagicMock,
+    mock_chat_cls: MagicMock,
     caplog,
 ):
     """
@@ -20,6 +22,7 @@ def test_main_calls_services(
     mock_downloader = mock_downloader_cls.return_value
     mock_processor = mock_processor_cls.return_value
     mock_trainer = mock_trainer_cls.return_value
+    mock_chat = mock_chat_cls.return_value
 
     with caplog.at_level(logging.INFO):
         main()
@@ -33,9 +36,13 @@ def test_main_calls_services(
 
     mock_trainer_cls.assert_called_once()
     mock_trainer.train.assert_called_once_with(
-        epochs=5, batch_size=16, grad_accum_steps=2
+        epochs=5, batch_size=32, grad_accum_steps=2
     )
+
+    mock_chat_cls.assert_called_once()
+    mock_chat.run.assert_called_once()
 
     # Verify that logs are generated correctly
     assert "Starting SLM Dataset Pipeline" in caplog.text
     assert "Pipeline execution finished successfully." in caplog.text
+    assert "Starting interactive chat session..." in caplog.text

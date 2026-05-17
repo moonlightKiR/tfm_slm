@@ -1,5 +1,6 @@
 import logging
 
+from app.chat import ChatService
 from app.dataset.downloader import DatasetDownloader
 from app.dataset.processor import DatasetProcessor
 from app.training.trainer import TrainingService
@@ -23,7 +24,7 @@ def main():
     # 2. Dataset Processing/Mixing Service
     # Aumentado a 200k para un entrenamiento completo
     processor = DatasetProcessor()
-    processor.process(total_samples=200000) 
+    processor.process(total_samples=200000)
 
     # 3. Training Service (Hybrid Model)
     logger.info("Phase 3: Training Hybrid Transformer-GRU Model from scratch...")
@@ -32,6 +33,11 @@ def main():
     trainer.train(epochs=5, batch_size=32, grad_accum_steps=2)
 
     logger.info("Pipeline execution finished successfully.")
+
+    # 4. Interactive Chat Session
+    logger.info("Starting interactive chat session...")
+    chat_service = ChatService()
+    chat_service.run()
 
 
 if __name__ == "__main__":
