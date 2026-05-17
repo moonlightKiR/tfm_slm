@@ -13,7 +13,7 @@ variable "project_name" {
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
-  default     = "g6e.2xlarge"
+  default     = "g7e.2xlarge"
 }
 
 variable "ssh_key_name" {
