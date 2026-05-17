@@ -10,7 +10,7 @@ from botocore.exceptions import ClientError
 from datasets import load_from_disk
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from transformers import AutoTokenizer, PreTrainedTokenizer
+from transformers import AutoTokenizer
 
 # Optimizations for NVIDIA L40S (Ada Lovelace) on g6e.2xlarge
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
@@ -38,8 +38,11 @@ class TrainingService:
 
         logger.info(f"Using device: {self.device}")
 
-        self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained("gpt2")
-        self.tokenizer.pad_token = self.tokenizer.eos_token  # type: ignore
+        tok = AutoTokenizer.from_pretrained("gpt2")
+        if tok is None:
+            raise RuntimeError("Failed to load tokenizer")
+        self.tokenizer = tok
+        self.tokenizer.pad_token = self.tokenizer.eos_token
 
     def train(
         self,
@@ -95,7 +98,7 @@ class TrainingService:
         if checkpoint_path.exists():
             logger.info(f"Checkpoint found at {checkpoint_path}. Resuming...")
             checkpoint = torch.load(checkpoint_path, map_location=self.device)
-            # Use strict=False to handle the new causal_mask buffer which is missing in old checkpoints
+            # strict=False: handles new causal_mask buffer missing in old checkpoints
             model.load_state_dict(checkpoint["model_state_dict"], strict=False)
             optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
             start_epoch = checkpoint["epoch"] + 1
@@ -116,7 +119,7 @@ class TrainingService:
                 logger.info("No checkpoint found in S3. Starting from scratch.")
 
         # Optimization: torch.compile fusion for Ada Lovelace (L40S)
-        # Note: We compile AFTER loading to avoid state_dict key mismatches (_orig_mod prefix)
+        # Compile AFTER loading to avoid state_dict key mismatches
         logger.info("Compiling model with torch.compile for maximum throughput...")
         model = torch.compile(model)
 

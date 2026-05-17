@@ -60,7 +60,8 @@ class ChatService:
 
     def _load_model(self) -> None:
         """Loads HybridModel and checkpoint weights from disk."""
-        assert self.tokenizer is not None
+        if self.tokenizer is None:
+            raise RuntimeError("Tokenizer not loaded")
 
         print(f"Cargando pesos desde {self.checkpoint_path}...")
 
@@ -90,8 +91,8 @@ class ChatService:
         top_k: int = 50,
     ) -> str:
         """Generates model response for given prompt."""
-        assert self.tokenizer is not None
-        assert self.model is not None
+        if self.tokenizer is None or self.model is None:
+            raise RuntimeError("Tokenizer or model not loaded")
 
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
         input_length = inputs["input_ids"].shape[1]
@@ -134,7 +135,8 @@ class ChatService:
         self._load_tokenizer()
         self._load_model()
 
-        assert self.checkpoint is not None
+        if self.checkpoint is None:
+            raise RuntimeError("Checkpoint not loaded")
         epoch = self.checkpoint.get("epoch", "unknown")
         print(f"\n✅ Modelo cargado (Epoca: {epoch})")
 

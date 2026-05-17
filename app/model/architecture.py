@@ -96,7 +96,9 @@ class HybridModel(PreTrainedModel):
         )
         self.dropout = nn.Dropout(config.dropout)
 
-        self.blocks = nn.ModuleList([HybridBlock(config) for _ in range(config.num_layers)])
+        self.blocks = nn.ModuleList(
+            [HybridBlock(config) for _ in range(config.num_layers)]
+        )
 
         self.ln_f = nn.LayerNorm(config.hidden_size)
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
@@ -107,7 +109,10 @@ class HybridModel(PreTrainedModel):
 
         # Pre-compute and register causal mask as a buffer
         # This prevents recreating it and moving it from CPU to GPU every forward pass
-        mask = torch.triu(torch.ones(config.max_position_embeddings, config.max_position_embeddings), diagonal=1).bool()
+        mask = torch.triu(
+            torch.ones(config.max_position_embeddings, config.max_position_embeddings),
+            diagonal=1,
+        ).bool()
         self.register_buffer("causal_mask", mask)
 
         self.post_init()

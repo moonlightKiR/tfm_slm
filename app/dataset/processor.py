@@ -3,7 +3,7 @@ from pathlib import Path
 
 from app.config import settings
 from datasets import Dataset, concatenate_datasets, load_dataset
-from transformers import AutoTokenizer, PreTrainedTokenizer
+from transformers import AutoTokenizer
 
 from .constants import DATASETS_CONFIG
 
@@ -19,8 +19,11 @@ class DatasetProcessor:
 
     def __init__(self, output_dir: str = settings.datasets_dir):
         self.output_dir = Path(output_dir)
-        self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained("gpt2")
-        self.tokenizer.pad_token = self.tokenizer.eos_token  # type: ignore
+        tok = AutoTokenizer.from_pretrained("gpt2")
+        if tok is None:
+            raise RuntimeError("Failed to load tokenizer")
+        self.tokenizer = tok
+        self.tokenizer.pad_token = self.tokenizer.eos_token
 
     def process(
         self, output_path: str = "mixed_dataset", total_samples: int = 100000
