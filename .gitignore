@@ -250,5 +250,6 @@ GEMINI.md
 # Pytest
 output/checkpoint.pt
 
-# Secial Commands
-markdowns/
+# Special Commands & Local Symlinks
+markdowns
+/markdowns/
