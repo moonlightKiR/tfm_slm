@@ -145,3 +145,8 @@ class ChatService:
             self._run_chat_loop()
         else:
             print("No interactive terminal. Skipping chat loop.")
+
+
+if __name__ == "__main__":
+    chat_service = ChatService()
+    chat_service.run()
