@@ -38,9 +38,10 @@ class DatasetProcessor:
             return None
 
         weights = {
-            "open_assistant": 0.25,
-            "ultrachat": 0.25,
-            "alpaca": 0.50,
+            "open_assistant": 0.30,
+            "ultrachat": 0.30,
+            "alpaca": 0.20,
+            "sharegpt": 0.20,
         }
 
         logger.info(f"Creating mixed dataset with total samples: {total_samples}")
