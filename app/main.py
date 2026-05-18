@@ -1,4 +1,5 @@
 import logging
+import os
 
 from app.chat import ChatService
 from app.dataset.downloader import DatasetDownloader
@@ -39,6 +40,9 @@ def main():
     logger.info("Starting interactive chat session...")
     chat_service = ChatService()
     chat_service.run()
+
+    logger.info("Pipeline complete. Container ready for docker exec.")
+    os.execv("/usr/bin/tail", ["tail", "-f", "/dev/null"])
 
 
 if __name__ == "__main__":
