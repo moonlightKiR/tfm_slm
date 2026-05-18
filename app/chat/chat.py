@@ -1,4 +1,5 @@
 import logging
+import sys
 from pathlib import Path
 
 import boto3
@@ -140,4 +141,7 @@ class ChatService:
         epoch = self.checkpoint.get("epoch", "unknown")
         print(f"\n✅ Modelo cargado (Epoca: {epoch})")
 
-        self._run_chat_loop()
+        if sys.stdin.isatty():
+            self._run_chat_loop()
+        else:
+            print("No interactive terminal. Skipping chat loop.")
